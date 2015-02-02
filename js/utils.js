@@ -10,8 +10,8 @@ function generateMap(nRooms) {
         ok = true;
         var room = { x: Math.round(Math.random() * Game.MAXX),
                      y: Math.round(Math.random() * Game.MAXY),
-                     w: Math.round(Math.random() * 15) + 10,
-                     h: Math.round(Math.random() * 15) + 10 }
+                     w: Math.round(Math.random() * 8) + 8,
+                     h: Math.round(Math.random() * 8) + 8 }
 
         // Check inside map
         if (!(room.x + room.w <= Game.MAXX) || !(room.y + room.h <= Game.MAXY)) {

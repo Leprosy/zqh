@@ -5,6 +5,6 @@ Game.tile = 8;
 
 window.onload = function() {
     init();
-    Game.map = generateMap(3);
+    Game.map = generateMap(7);
     renderMap();
 };
