@@ -1,6 +1,6 @@
 var Game = {};
-Game.MAXX = 100;
-Game.MAXY = 100;
+Game.MAXX = 80;
+Game.MAXY = 80;
 Game.tile = 8;
 
 window.onload = function() {
