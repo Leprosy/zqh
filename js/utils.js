@@ -41,7 +41,7 @@ function generateMap(nRooms) {
     }
 
     // Create corridors
-    //Vertical
+    // Vertical
     var min = 9999;
     var minroom = -1;
 
@@ -69,6 +69,39 @@ function generateMap(nRooms) {
         } else {
             corridor.y = rooms[minroom].y + rooms[minroom].h + 1;
             corridor.h = rooms[0].y - (rooms[minroom].y + rooms[minroom].h) - 2;
+        }
+
+        rooms.push(corridor);
+    }
+
+    // Horizontal
+    var min = 9999;
+    var minroom = -1;
+
+    for (i = 1; i < nRooms; ++i) {
+        if ((rooms[0].y >= rooms[i].y && rooms[0].y <= rooms[i].y + rooms[i].h) || 
+            (rooms[i].y >= rooms[0].y && rooms[i].y <= rooms[0].y + rooms[0].h)) {
+            var diff = Math.abs(rooms[0].x + (rooms[0].x / 2) - (rooms[i].x + (rooms[i].w / 2)));
+
+            if (diff < min) {
+                min = diff;
+                minroom = i;
+            }
+        }
+    }
+
+    if (minroom > -1) {
+        var minv = Math.max(rooms[minroom].y, rooms[0].y);
+        var maxv = Math.min(rooms[minroom].y + rooms[minroom].w, rooms[0].y + rooms[0].w);
+        var ver = minv + Math.round(Math.random() * (maxv - minv));
+        var corridor = { x: 0, y: ver, w: 0, h: 2 }
+
+        if (rooms[0].x < rooms[minroom].x) { //
+            corridor.x = rooms[0].x + rooms[0].w + 1;
+            corridor.w = rooms[minroom].x - (rooms[0].x + rooms[0].w) - 2;
+        } else {
+            corridor.x = rooms[minroom].x + rooms[minroom].w + 1;
+            corridor.w = rooms[0].x - (rooms[minroom].x + rooms[minroom].w) - 2;
         }
 
         rooms.push(corridor);
