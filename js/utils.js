@@ -57,28 +57,22 @@ function generateMap(nRooms) {
         }
     }
 
-    var hor = Math.round(Math.random() * 60);
-    var corridor = { x: hor, y: 0, w: 2, h: 0 }
+    if (minroom > -1) {
+        var minh = Math.max(rooms[minroom].x, rooms[0].x);
+        var maxh = Math.min(rooms[minroom].x + rooms[minroom].h, rooms[0].x + rooms[0].h);
+        var hor = minh + Math.round(Math.random() * (maxh - minh));
+        var corridor = { x: hor, y: 0, w: 2, h: 0 }
 
-    if (rooms[0].y < rooms[minroom].y) { //
-        corridor.y = rooms[0].y + rooms[0].h;
-        corridor.h = rooms[minroom].y - (rooms[0].y + rooms[0].h);
-    } else {
-        corridor.y = rooms[minroom].y + rooms[minroom].h;
-        corridor.h = rooms[0].y - (rooms[minroom].y + rooms[minroom].h);
-    }
-
-    rooms.push(corridor);
-
-    console.log('%c connected to ' + minroom, 'color: ' + colors[minroom], diff);
-
-    // Horizontal
-    /* for (i = 1; i < nRooms; ++i) {
-        if ((rooms[0].y >= rooms[i].y && rooms[0].y <= rooms[i].y + rooms[i].h) || 
-            (rooms[i].y >= rooms[0].y && rooms[i].y <= rooms[0].y + rooms[0].h)){
-            console.log('connected to ' + i)
+        if (rooms[0].y < rooms[minroom].y) { //
+            corridor.y = rooms[0].y + rooms[0].h + 1;
+            corridor.h = rooms[minroom].y - (rooms[0].y + rooms[0].h) - 2;
+        } else {
+            corridor.y = rooms[minroom].y + rooms[minroom].h + 1;
+            corridor.h = rooms[0].y - (rooms[minroom].y + rooms[minroom].h) - 2;
         }
-    } */
+
+        rooms.push(corridor);
+    }
 
     return rooms;
 }
