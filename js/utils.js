@@ -61,7 +61,7 @@ function generateMap(nRooms) {
         var minh = Math.max(rooms[minroom].x, rooms[0].x);
         var maxh = Math.min(rooms[minroom].x + rooms[minroom].h, rooms[0].x + rooms[0].h);
         var hor = minh + Math.round(Math.random() * (maxh - minh));
-        var corridor = { x: hor, y: 0, w: 2, h: 0 }
+        var corridor = { x: hor, y: 0, w: 0, h: 0 }
 
         if (rooms[0].y < rooms[minroom].y) { //
             corridor.y = rooms[0].y + rooms[0].h + 1;
@@ -75,7 +75,7 @@ function generateMap(nRooms) {
     }
 
     // Horizontal
-    var min = 9999;
+    /* var min = 9999;
     var minroom = -1;
 
     for (i = 1; i < nRooms; ++i) {
@@ -94,9 +94,9 @@ function generateMap(nRooms) {
         var minv = Math.max(rooms[minroom].y, rooms[0].y);
         var maxv = Math.min(rooms[minroom].y + rooms[minroom].w, rooms[0].y + rooms[0].w);
         var ver = minv + Math.round(Math.random() * (maxv - minv));
-        var corridor = { x: 0, y: ver, w: 0, h: 2 }
+        var corridor = { x: 0, y: ver, w: 0, h: 0 }
 
-        if (rooms[0].x < rooms[minroom].x) { //
+        if (rooms[0].x < rooms[minroom].x) {
             corridor.x = rooms[0].x + rooms[0].w + 1;
             corridor.w = rooms[minroom].x - (rooms[0].x + rooms[0].w) - 2;
         } else {
@@ -105,7 +105,7 @@ function generateMap(nRooms) {
         }
 
         rooms.push(corridor);
-    }
+    } */
 
     return rooms;
 }
