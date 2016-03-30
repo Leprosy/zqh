@@ -16,10 +16,8 @@
         <script src="js/utils.js"></script>
         <script src="js/crafty.js"></script>
         <script src="http://threejs.org/build/three.min.js"></script>
-
-
 <script>
-
+/*
     var scene, camera, renderer;
     var geometry, material, mesh, light, lamp;
 
@@ -61,7 +59,7 @@
         mesh.rotation.y += 0.02;
         renderer.render( scene, camera );
     }
-
+*/
 </script>
     </body>
 </html>
