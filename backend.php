@@ -1,25 +1,24 @@
 <?php
 /* Setup */
+use \Psr\Http\Message\ServerRequestInterface as Request;
+use \Psr\Http\Message\ResponseInterface as Response;
 require 'vendor/autoload.php';
-$app = new \Slim\Slim();
+$app = new \Slim\App(['settings' => ['displayErrorDetails' => true]]);
 
 
 /* Routes */
 // Home
-$app->get("/", function() use ($app) {
-    var_dump("home");
+$app->get("/", function(Request $request, Response $response) use ($app) {
+    return $response->withJson(array("version" => \Lib\Config::VERSION));
 });
 
-// Version
-$app->get("/version", function() use ($app) {
-    var_dump(\Lib\Config::VERSION);
-});
-
-// Build
-$app->get("/map/:rooms", function($rooms) use ($app) {
+// Map
+$app->get("/map/{rooms}", function(Request $request, Response $response) use ($app) {
+    $rooms = $request->getAttribute("rooms");
     $map = new \Lib\Map(60, 60);
     $map->generate($rooms);
-    $app->render("map.php", array("map" => $map->getJSON()));
+
+    return $response->withJson(array("map" => $map->getJSON()));
 });
 
 
