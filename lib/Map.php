@@ -80,7 +80,8 @@ class Map {
         $this->rooms = array();
         $this->map = array(
                 "floors" => array(array()),
-                "roofs" => array(array())
+                "roofs" => array(array()),
+                "warp" => array()
         );
 
         for ($x = 0; $x < $width; $x++) {
@@ -115,6 +116,7 @@ class Map {
         $this->json["floors"] = array();
         $this->json["roofs"] = array();
         $this->json["walls"] = array();
+        $this->json["warp"] = array();
 
         // Rooms and corridors
         $this->generateRooms($nRooms);
@@ -122,7 +124,16 @@ class Map {
 
         //Objects...monsters...?
 
+        //Warp points
+        $firstR = $this->rooms[0];
+        $lastR = $this->rooms[$nRooms - 1];
+        $this->map["warp"]["start"]["x"] = rand($firstR->x + 1, $firstR->x + $firstR->width - 2);
+        $this->map["warp"]["start"]["y"] = rand($firstR->y + 1, $firstR->y + $firstR->width - 2);
+        $this->map["warp"]["end"]["x"] = rand($lastR->x + 1, $lastR->x + $lastR->width - 2);
+        $this->map["warp"]["end"]["y"] = rand($lastR->y + 1, $lastR->y + $lastR->width - 2);
+
         // Compile JSON
+        // Map
         for ($x = 1; $x < $this->width - 1; $x++) {
             for ($y = 1; $y < $this->height - 1; $y++) {
                 if ($this->map["floors"][$x][$y] != 0) {
@@ -158,6 +169,8 @@ class Map {
                 }
             }
         }
+        $this->json["warp"]["start"] = $this->map["warp"]["start"];
+        $this->json["warp"]["end"] = $this->map["warp"]["end"];
     }
 
     public function generateRooms($nRooms) {
