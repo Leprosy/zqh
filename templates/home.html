@@ -53,9 +53,10 @@
  * 2d map rendering
  */
 function renderMap(map) {
-    var tile = 4;
+    var tile = $("#map").width() / map.width;
 
-    Crafty.init(map.width * tile, map.height * tile, 'map');
+    Crafty.init(map.width * tile, map.height * tile, "map");
+    Crafty.pixelart(true);
     Crafty.background('#004');
     console.log(map);
 
@@ -126,7 +127,7 @@ Game.init3d = function() {
 
     // Finish
     $container.append(Game.renderer.domElement);
-}
+};
 
 /**
  * Render a map in 3d canvas
@@ -159,7 +160,7 @@ Game.loadMap = function(map) {
     Game.camera.position.x = map.warp.start.x * Game.size;
     Game.camera.position.z = map.warp.start.y * Game.size;
     Game.camera.position.y = 0;
-}
+};
 
 /**
  * 3d render update
@@ -168,7 +169,7 @@ Game.render = function() {
     Game.light.position.copy(Game.camera.position);
     Game.renderer.render(Game.scene, Game.camera);
     //console.log('ren')
-}
+};
 
 /**
  * Begins animation cycle
@@ -177,11 +178,14 @@ Game.animate = function() {
     requestAnimationFrame(Game.animate);
     //Game.controls.update();
     Game.render();
-}
+};
 
 /**
- * Soft rotation
+ * Player rotations and translations
  */
+Game.forward = function() {
+    
+};
 Game.rotateRight = function() {
     if (Game.rotating == 0) {
         Game._rotate(-1);
@@ -205,7 +209,9 @@ Game._rotate = function(d) {
 
         if (Math.abs(Game.rotating) > Game.rotationSpeed) {
             Game.rotating = 0;
-            console.log("end rotation")
+            var correction = Game.camera.rotation.y % (2 * Math.PI);
+            Game.camera.rotation.y = +correction.toFixed(2); //angle correction
+            console.log("end rotation", Game.camera.rotation.y)
         } else {
             setTimeout(Game._rotate, 25);
         }
