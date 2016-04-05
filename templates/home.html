@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <style>
+        .content{width:80%;margin:1em auto;}
+        </style>
         <link rel="stylesheet" href="css/pure.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="utf-8">
@@ -10,18 +13,33 @@
     <body>
         <h1>{{name}}</h1>
 
-        <div class="pure-g">
-            <div class="pure-u-1-5">
-                <div id="side"></div>
-            </div>
+        <div class="content">
+            <div class="pure-g">
+                <div class="pure-u-1-5">
+                    <div id="side"></div>
+                </div>
 
-            <div class="pure-u-3-5">
-                <div id="3d"></div>
-            </div>
+                <div class="pure-u-3-5">
+                    <div id="3d"></div>
+                </div>
 
-            <div class="pure-u-1-5">
-                <div id="map"></div>
-                <div id="commands"></div>
+                <div class="pure-u-1-5">
+                    <div id="map"></div>
+                    <div id="commands">
+                        <table>
+                            <tr>
+                                <td></td>
+                                <td><button onclick="Game.forward()">^</button></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td><button onclick="Game.rotateLeft()">&lt;</button></td>
+                                <td><button onclick="Game.forward()">v</button></td>
+                                <td><button onclick="Game.rotateRight()">></button></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -88,7 +106,7 @@ Game.init3d = function() {
     Game.renderer = new THREE.WebGLRenderer();
     Game.renderer.setSize($container.width(), $container.width() * 0.8);
     Game.camera = new THREE.PerspectiveCamera(75, 1.2, 0.1, 10000);
-	Game.camera.position.z = 5000;
+    Game.camera.position.z = 5000;
 
     //Debug controller
     /* Game.controls = new THREE.TrackballControls(Game.camera);
@@ -106,7 +124,7 @@ Game.init3d = function() {
     Game.light = new THREE.PointLight(0xFFFFFF, 1, Game.lightSize);
     Game.scene.add(Game.light);
 
-	// Finish
+    // Finish
     $container.append(Game.renderer.domElement);
 }
 
@@ -165,16 +183,20 @@ Game.animate = function() {
  * Soft rotation
  */
 Game.rotateRight = function() {
-    Game.rotate(-1);
+    if (Game.rotating == 0) {
+        Game._rotate(-1);
+    }
 };
 Game.rotateLeft = function() {
-    Game.rotate(1);
+    if (Game.rotating == 0) {
+        Game._rotate(1);
+    }
 };
-Game.rotate = function(d) {
+Game._rotate = function(d) {
     if (Game.rotating === 0) {
         console.log("init rotation")
         Game.rotating = d;
-        setTimeout(Game.rotate, 25);
+        setTimeout(Game._rotate, 25);
     } else {
         var fact = Game.rotating / Math.abs(Game.rotating);
         console.log("rotating", Game.rotating, fact);
@@ -185,7 +207,7 @@ Game.rotate = function(d) {
             Game.rotating = 0;
             console.log("end rotation")
         } else {
-            setTimeout(Game.rotate, 25);
+            setTimeout(Game._rotate, 25);
         }
     }
 }
@@ -199,7 +221,7 @@ Game.rotate = function(d) {
  * App entry point
  */
 window.onload = function() {
-	//3d init
+    //3d init
     Game.init3d();
     Game.animate();
 
