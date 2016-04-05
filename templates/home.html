@@ -93,8 +93,10 @@ function renderMap(map) {
 var Game = {};
 Game.size = 100;
 Game.lightSize = 1000;
-Game.rotationSpeed = 8;
-Game.moving = false;
+Game.moveTweenSpeed = 8;
+Game.moving = 0;
+Game.horz = 0;
+Game.vert = 0;
 Game.rotating = 0;
 
 /**
@@ -183,8 +185,26 @@ Game.animate = function() {
 /**
  * Player rotations and translations
  */
-Game.forward = function() {
-    
+Game.forward = function() { //Camera needs adjustment
+    if (Game.moving == 0) {
+        console.log("init moving");
+        Game.moving = 1;
+        Game.vert = Math.round(Math.cos(Game.camera.rotation.y)); //These two must be initialized?
+        Game.horz = Math.round(Math.sin(Game.camera.rotation.y));
+        setTimeout(Game.forward, 25);
+    } else {
+        console.log("moving", Game.rotating, Game.horz, Game.vert);
+        Game.camera.position.x -= (Game.horz * Game.size) / Game.moveTweenSpeed;
+        Game.camera.position.z -= (Game.vert * Game.size) / Game.moveTweenSpeed;
+        Game.moving++;
+
+        if (Math.abs(Game.moving) > Game.moveTweenSpeed) {
+            Game.moving = 0;
+            console.log("end moving", Game.camera.rotation.y)
+        } else {
+            setTimeout(Game.forward, 25);
+        }
+    }
 };
 Game.rotateRight = function() {
     if (Game.rotating == 0) {
@@ -204,10 +224,10 @@ Game._rotate = function(d) {
     } else {
         var fact = Game.rotating / Math.abs(Game.rotating);
         console.log("rotating", Game.rotating, fact);
-        Game.camera.rotation.y += fact * (Math.PI / 2) / Game.rotationSpeed;
+        Game.camera.rotation.y += fact * (Math.PI / 2) / Game.moveTweenSpeed;
         Game.rotating += fact;
 
-        if (Math.abs(Game.rotating) > Game.rotationSpeed) {
+        if (Math.abs(Game.rotating) > Game.moveTweenSpeed) {
             Game.rotating = 0;
             var correction = Game.camera.rotation.y % (2 * Math.PI);
             Game.camera.rotation.y = +correction.toFixed(2); //angle correction
