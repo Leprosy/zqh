@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <style>
-        </style>
-        <meta charset="UTF-8">
-        <title>zqh</title>
+        <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <title>This is zqh á</title>
     </head>
 
     <body>
     	<h1>{{name}}</h1>
         <div id="game"></div>
-        <div id="3d"></div>
+        <div id="3d" style="width: 60%; margin:20px auto"></div>
 
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
         <script src="js/components.js"></script>
         <script src="js/utils.js"></script>
         <script src="js/crafty.js"></script>
         <script src="http://threejs.org/build/three.min.js"></script>
+        <script src="http://threejs.org/examples/js/controls/TrackballControls.js"></script>
         <!--  <script src="js/game.js"></script> -->
 <script>
+/**
+ * 2d map rendering
+ */
 function renderMap(map) {
     var tile = 4;
 
@@ -50,9 +54,147 @@ function renderMap(map) {
           .color("#ff00ff");
 }
 
+
+
+/**
+ * 3d game data
+ */
+var Game = {};
+Game.size = 100;
+Game.lightSize = 1000;
+Game.rotationSpeed = 8;
+Game.moving = false;
+Game.rotating = 0;
+
+/**
+ * Initializes 3d components
+ */
+Game.init3d = function() {
+    // Init components
+    var $container = $("#3d");
+    Game.scene = new THREE.Scene();
+    Game.renderer = new THREE.WebGLRenderer();
+    Game.renderer.setSize($container.width(), $container.width() * 0.8);
+    Game.camera = new THREE.PerspectiveCamera(75, 1.2, 0.1, 10000);
+	Game.camera.position.z = 5000;
+
+    //Debug controller
+    /* Game.controls = new THREE.TrackballControls(Game.camera);
+    Game.controls.rotateSpeed = 1.0;
+    Game.controls.zoomSpeed = 1.2;
+    Game.controls.panSpeed = 0.8;
+    Game.controls.noZoom = false;
+    Game.controls.noPan = false;
+    Game.controls.staticMoving = true;
+    Game.controls.dynamicDampingFactor = 0.3;
+    Game.controls.keys = [ 65, 83, 68 ];
+    Game.controls.addEventListener('change', Game.render); */
+
+    // Light
+    Game.light = new THREE.PointLight(0xFFFFFF, 1, Game.lightSize);
+    Game.scene.add(Game.light);
+
+	// Finish
+    $container.append(Game.renderer.domElement);
+}
+
+/**
+ * Render a map in 3d canvas
+ */
+Game.loadMap = function(map) {
+    // Render map
+    for (i = 0; i < map.floors.length; ++i) {
+        var floor = map.floors[i];
+        var mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(Game.size, Game.size / 20, Game.size),
+                new THREE.MeshLambertMaterial({ color: 0xddcccc }));
+        mesh.position.x = floor.x * Game.size;
+        mesh.position.z = floor.y * Game.size;
+        mesh.position.y = -Game.size / 2;
+        Game.scene.add(mesh);
+    }
+
+    for (i = 0; i < map.walls.length; ++i) {
+        var wall = map.walls[i];
+        var mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(Game.size, Game.size, Game.size),
+                new THREE.MeshLambertMaterial({ color: 0xcc00cc }));
+        mesh.position.x = wall.x * Game.size;
+        mesh.position.z = wall.y * Game.size;
+        mesh.position.y = 0;
+        Game.scene.add(mesh);
+    }
+
+    // Set player position
+    Game.camera.position.x = map.warp.start.x * Game.size;
+    Game.camera.position.z = map.warp.start.y * Game.size;
+    Game.camera.position.y = 0;
+}
+
+/**
+ * 3d render update
+ */
+Game.render = function() {
+    Game.light.position.copy(Game.camera.position);
+    Game.renderer.render(Game.scene, Game.camera);
+    //console.log('ren')
+}
+
+/**
+ * Begins animation cycle
+ */
+Game.animate = function() {
+    requestAnimationFrame(Game.animate);
+    //Game.controls.update();
+    Game.render();
+}
+
+/**
+ * Soft rotation
+ */
+Game.rotateRight = function() {
+    Game.rotate(-1);
+};
+Game.rotateLeft = function() {
+    Game.rotate(1);
+};
+Game.rotate = function(d) {
+    if (Game.rotating === 0) {
+        console.log("init rotation")
+        Game.rotating = d;
+        setTimeout(Game.rotate, 25);
+    } else {
+        var fact = Game.rotating / Math.abs(Game.rotating);
+        console.log("rotating", Game.rotating, fact);
+        Game.camera.rotation.y += fact * (Math.PI / 2) / Game.rotationSpeed;
+        Game.rotating += fact;
+
+        if (Math.abs(Game.rotating) > Game.rotationSpeed) {
+            Game.rotating = 0;
+            console.log("end rotation")
+        } else {
+            setTimeout(Game.rotate, 25);
+        }
+    }
+}
+
+
+
+
+
+
+/**
+ * App entry point
+ */
 window.onload = function() {
+	//3d init
+    Game.init3d();
+    Game.animate();
+
+    // Load a map and render in 2d and 3d
     $.get("backend.php/map/8", function(data) {
         renderMap(data.map);
+        Game.loadMap(data.map);
     });
 }
 
