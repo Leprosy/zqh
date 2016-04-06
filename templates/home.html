@@ -34,7 +34,7 @@
                             </tr>
                             <tr>
                                 <td><button onclick="Game.rotateLeft()">&lt;</button></td>
-                                <td><button onclick="Game.forward()">v</button></td>
+                                <td><button onclick="Game.backward()">v</button></td>
                                 <td><button onclick="Game.rotateRight()">></button></td>
                             </tr>
                         </table>
@@ -50,7 +50,7 @@
         <!--  <script src="js/game.js"></script> -->
 <script>
 /**
- * 2d map rendering
+ * 2d stuff
  */
 function renderMap(map) {
     var tile = $("#map").width() / map.width;
@@ -88,16 +88,13 @@ function renderMap(map) {
 
 
 /**
- * 3d game data
+ * 3d stuff
  */
 var Game = {};
 Game.size = 100;
 Game.lightSize = 1000;
-Game.moveTweenSpeed = 8;
-Game.moving = 0;
-Game.horz = 0;
-Game.vert = 0;
-Game.rotating = 0;
+Game.moveSpeed = 250;
+Game.moving = false;
 
 /**
  * Initializes 3d components
@@ -140,7 +137,9 @@ Game.loadMap = function(map) {
         var floor = map.floors[i];
         var mesh = new THREE.Mesh(
                 new THREE.BoxGeometry(Game.size, Game.size / 20, Game.size),
-                new THREE.MeshLambertMaterial({ color: 0xddcccc }));
+                new THREE.MeshLambertMaterial({
+                    map: new THREE.ImageUtils.loadTexture("img/textures/floor1.jpg") //@todo: preload
+                }));
         mesh.position.x = floor.x * Game.size;
         mesh.position.z = floor.y * Game.size;
         mesh.position.y = -Game.size / 2;
@@ -151,7 +150,9 @@ Game.loadMap = function(map) {
         var wall = map.walls[i];
         var mesh = new THREE.Mesh(
                 new THREE.BoxGeometry(Game.size, Game.size, Game.size),
-                new THREE.MeshLambertMaterial({ color: 0xcc00cc }));
+                new THREE.MeshLambertMaterial({
+                    map: new THREE.ImageUtils.loadTexture("img/textures/wall1.jpg") //@todo: preload
+                }));
         mesh.position.x = wall.x * Game.size;
         mesh.position.z = wall.y * Game.size;
         mesh.position.y = 0;
@@ -170,7 +171,6 @@ Game.loadMap = function(map) {
 Game.render = function() {
     Game.light.position.copy(Game.camera.position);
     Game.renderer.render(Game.scene, Game.camera);
-    //console.log('ren')
 };
 
 /**
@@ -185,62 +185,145 @@ Game.animate = function() {
 /**
  * Player rotations and translations
  */
-Game.forward = function() { //Camera needs adjustment
-    if (Game.moving == 0) {
-        console.log("init moving");
-        Game.moving = 1;
-        Game.vert = Math.round(Math.cos(Game.camera.rotation.y)); //These two must be initialized?
-        Game.horz = Math.round(Math.sin(Game.camera.rotation.y));
-        setTimeout(Game.forward, 25);
-    } else {
-        console.log("moving", Game.rotating, Game.horz, Game.vert);
-        Game.camera.position.x -= (Game.horz * Game.size) / Game.moveTweenSpeed;
-        Game.camera.position.z -= (Game.vert * Game.size) / Game.moveTweenSpeed;
-        Game.moving++;
+Game.forward = function() { Game._move(-1); };
+Game.backward = function() { Game._move(1); };
+Game._move = function(d) {
+    if (!Game.moving) {
+        Game.moving = true;
+        var x = Game.camera.position.x;
+        var z = Game.camera.position.z;
+        var vert = Math.round(Math.cos(Game.camera.rotation.y));
+        var horz = Math.round(Math.sin(Game.camera.rotation.y));
+        var tw = new Tween(Game.camera.position).to({ x: x + d * horz * Game.size,
+                                                      z: z + d * vert * Game.size }, Game.moveSpeed)
+                                                .onFinish(function() { Game.moving = false})
+                                                .start();
+    }
+};
 
-        if (Math.abs(Game.moving) > Game.moveTweenSpeed) {
-            Game.moving = 0;
-            console.log("end moving", Game.camera.rotation.y)
-        } else {
-            setTimeout(Game.forward, 25);
-        }
-    }
-};
-Game.rotateRight = function() {
-    if (Game.rotating == 0) {
-        Game._rotate(-1);
-    }
-};
-Game.rotateLeft = function() {
-    if (Game.rotating == 0) {
-        Game._rotate(1);
-    }
-};
+Game.rotateRight = function() { Game._rotate(-1); };
+Game.rotateLeft = function() { Game._rotate(1); };
 Game._rotate = function(d) {
-    if (Game.rotating === 0) {
-        console.log("init rotation")
-        Game.rotating = d;
-        setTimeout(Game._rotate, 25);
-    } else {
-        var fact = Game.rotating / Math.abs(Game.rotating);
-        console.log("rotating", Game.rotating, fact);
-        Game.camera.rotation.y += fact * (Math.PI / 2) / Game.moveTweenSpeed;
-        Game.rotating += fact;
-
-        if (Math.abs(Game.rotating) > Game.moveTweenSpeed) {
-            Game.rotating = 0;
-            var correction = Game.camera.rotation.y % (2 * Math.PI);
-            Game.camera.rotation.y = +correction.toFixed(2); //angle correction
-            console.log("end rotation", Game.camera.rotation.y)
-        } else {
-            setTimeout(Game._rotate, 25);
-        }
+    if (!Game.moving) {
+        Game.moving = true;
+        var y = Game.camera.rotation.y;
+        var tw = new Tween(Game.camera.rotation).to({ y: y + d * (Math.PI / 2) }, Game.moveSpeed)
+                                                .onFinish(function() { Game.moving = false})
+                                                .start();
     }
 }
 
 
 
+/**
+ * Utils, helpers and whatnot
+ */
 
+/**
+ * Tween class
+ * @author: Leprosy
+ * @created: Apr 6 2016
+ */
+
+/**
+ * Constructor
+ */
+function Tween(obj) {
+    this.endObj = null;
+    this.endObjStep = null;
+    this.frames = 0;
+    this.delay = 0;
+    this.obj = obj;
+    this.onUpdateCall = function() {};
+    this.onFinishCall = function() {};
+};
+
+/**
+ * Sets a new tween for the object
+ */
+Tween.prototype.to = function(endObj, delay) {
+    if (typeof delay == "undefined") delay = 500;
+    this.endObj = endObj;
+    this.endObjStep = {};
+    this.frames = (delay / 1000) * 60;
+    var endKeys = Object.keys(this.endObj);
+
+    for (var i in endKeys) {
+        var key = endKeys[i];
+
+        if (key in this.obj) {
+            this.endObjStep[key] = (this.endObj[key] - this.obj[key]) / this.frames;
+        } else {
+            delete this.endObj[key];
+        }
+    }
+
+    this.delay = delay;
+    return this;
+};
+
+/**
+ * Sets the update callback
+ */
+Tween.prototype.onUpdate = function(call) {
+    this.onUpdateCall = call;
+    return this;
+};
+
+/**
+ * Sets the finish callback
+ */
+Tween.prototype.onFinish = function(call) {
+    this.onFinishCall = call;
+    return this;
+};
+
+/**
+ * Update one frame
+ */
+Tween.prototype.update = function() {
+    if (this.frames == 0) return false;
+
+    // Update frame
+    var endKeys = Object.keys(this.endObj);
+
+    for (var i in endKeys) {
+        var key = endKeys[i];
+        this.obj[key] += this.endObjStep[key];
+    }
+
+    this.frames--;
+
+    if (this.frames == 0) {
+        // Set final value and finish call
+        for (var i in endKeys) {
+            var key = endKeys[i];
+            this.obj[key] = this.endObj[key];
+        }
+
+        this.onFinishCall(this.obj);
+    } else {
+        // Just update call
+        this.onUpdateCall(this.obj);
+    }
+
+    return true;
+};
+
+/**
+ * Starts the tween
+ */
+Tween.prototype.start = function() {
+    var _this = this;
+
+    var _tween = function () {
+        if (_this.update()) {
+            requestAnimationFrame(_tween);
+        }
+    };
+
+    _tween();
+}
 
 
 /**
@@ -257,6 +340,12 @@ window.onload = function() {
         Game.loadMap(data.map);
     });
 }
+
+// test code
+/* var tw = new Tween({x: 0, y: 0}).to({x: 100, z: 100})
+                                .onUpdate(function(obj){ console.info("twupdate", obj)})
+                                .onFinish(function(obj){ console.info("twfinish", obj)});
+console.log(tw); */
 
 </script>
 
