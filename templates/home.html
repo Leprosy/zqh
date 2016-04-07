@@ -3,6 +3,7 @@
     <head>
         <style>
         .content{width:80%;margin:1em auto;}
+        #{opacity:0;}
         </style>
         <link rel="stylesheet" href="css/pure.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,9 +12,13 @@
     </head>
 
     <body>
+        <div class="content" id="loading">
+            <h1>Loading...</h1>
+        </div>
+
         <h1>{{name}}</h1>
 
-        <div class="content">
+        <div class="content" id="game">
             <div class="pure-g">
                 <div class="pure-u-1-5">
                     <div id="side"></div>
@@ -93,6 +98,7 @@ function renderMap(map) {
 var Game = {};
 Game.size = 100;
 Game.lightSize = 1000;
+Game.lightVar = 500;
 Game.moveSpeed = 250;
 Game.moving = false;
 
@@ -122,7 +128,7 @@ Game.init3d = function() {
 
     // Light
     Game.light = new THREE.PointLight(0xFFFFFF, 1, Game.lightSize);
-    Game.scene.add(Game.light);
+    Game.scene.add(Game.light); //@todo: Add infinite tweens to make light dim
 
     // Finish
     $container.append(Game.renderer.domElement);
@@ -138,7 +144,7 @@ Game.loadMap = function(map) {
         var mesh = new THREE.Mesh(
                 new THREE.BoxGeometry(Game.size, Game.size / 20, Game.size),
                 new THREE.MeshLambertMaterial({
-                    map: new THREE.ImageUtils.loadTexture("img/textures/floor1.jpg") //@todo: preload
+                    map: new THREE.ImageUtils.loadTexture("img/textures/floor1.png") //@todo: preload
                 }));
         mesh.position.x = floor.x * Game.size;
         mesh.position.z = floor.y * Game.size;
@@ -151,7 +157,7 @@ Game.loadMap = function(map) {
         var mesh = new THREE.Mesh(
                 new THREE.BoxGeometry(Game.size, Game.size, Game.size),
                 new THREE.MeshLambertMaterial({
-                    map: new THREE.ImageUtils.loadTexture("img/textures/wall1.jpg") //@todo: preload
+                    map: new THREE.ImageUtils.loadTexture("img/textures/wall1.png") //@todo: preload
                 }));
         mesh.position.x = wall.x * Game.size;
         mesh.position.z = wall.y * Game.size;
@@ -338,6 +344,11 @@ window.onload = function() {
     $.get("backend.php/map/8", function(data) {
         renderMap(data.map);
         Game.loadMap(data.map);
+    });
+
+    // Show game screen
+    $("#loading").fadeOut(2000, function() {
+        $("#game").fadeIn();
     });
 }
 
