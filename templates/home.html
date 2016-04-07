@@ -97,8 +97,8 @@ function renderMap(map) {
  */
 var Game = {};
 Game.size = 100;
-Game.lightSize = 1000;
-Game.lightVar = 500;
+Game.lightSize = 1;
+Game.lightVar = 0.1;
 Game.moveSpeed = 250;
 Game.moving = false;
 
@@ -127,8 +127,13 @@ Game.init3d = function() {
     Game.controls.addEventListener('change', Game.render); */
 
     // Light
-    Game.light = new THREE.PointLight(0xFFFFFF, 1, Game.lightSize);
-    Game.scene.add(Game.light); //@todo: Add infinite tweens to make light dim
+    Game.light = new THREE.PointLight(0xFFFFFF, Game.lightSize, Game.size * 10);
+    Game.scene.add(Game.light);
+    Game.lightTween1 = new Tween(Game.light).to({intensity: Game.lightSize + Game.lightVar}, 1200);
+    Game.lightTween2 = new Tween(Game.light).to({intensity: Game.lightSize - Game.lightVar}, 1200);
+    Game.lightTween1.chain(Game.lightTween2);
+    Game.lightTween2.chain(Game.lightTween1);
+    Game.lightTween1.start(); //@todo: easing, tween the position
 
     // Finish
     $container.append(Game.renderer.domElement);
@@ -399,13 +404,6 @@ window.onload = function() {
     $("#loading").fadeOut(2000, function() {
         $("#game").fadeIn();
     });
-
-    obj = {x: 0}
-    tw1 = new Tween(obj).to({x: 10})
-    tw2 = new Tween(obj).to({x: 0})
-    //tw1.chain(tw2)
-    //tw2.chain(tw1)
-    tw1.start()
 }
 
 
