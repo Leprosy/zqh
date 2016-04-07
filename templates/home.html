@@ -224,6 +224,27 @@ Game._rotate = function(d) {
     }
 }
 
+Game.keyboardHandler = function(e) {
+    switch (e.keyCode) {
+        case 37: // left arrow key
+            Game.rotateLeft();
+            e.preventDefault();
+            break;
+        case 38: // up arrow key
+            Game.forward();
+            e.preventDefault();
+            break;
+        case 39: // right arrow key
+            Game.rotateRight();
+            e.preventDefault();
+        case 40: // up arrow key
+            Game.backward();
+            e.preventDefault();
+            break;
+        default:
+            console.log("unmapped_keycode", e.keyCode);
+    }
+};
 
 
 /**
@@ -399,6 +420,9 @@ window.onload = function() {
         renderMap(data.map);
         Game.loadMap(data.map);
     });
+
+    // Set keyboard handler
+    $(window).keydown(Game.keyboardHandler);
 
     // Show game screen
     $("#loading").fadeOut(2000, function() {
