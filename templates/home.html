@@ -235,14 +235,17 @@ Game._rotate = function(d) {
  * Constructor
  */
 function Tween(obj) {
-    this.chain = null;
     this.isRunning = false;
+
     this.endObj = null;
     this.endObjStep = null;
+
     this.frames = 0;
     this.delay = 0;
     this.obj = obj;
     this.originalObj = {};
+    this.chainedTween = null;
+
     this.onUpdateCall = function() {};
     this.onFinishCall = function() {};
 };
@@ -257,24 +260,22 @@ Tween.prototype._trKeys = function(obj, call) {
     }
 }
 
+Tween.prototype._clearTween = function() {
+    this.isRunning = false;
+    this.endObjStep = null;
+    this.frames = 0;
+}
+
 /**
  * Sets a new tween for the object
  */
 Tween.prototype.to = function(endObj, delay) {
-    if (typeof delay == "undefined") delay = 500;
+    if (typeof delay == "undefined") {
+        delay = 500;
+    }
+
+    this._clearTween();
     this.endObj = endObj;
-    this.endObjStep = {};
-    this.originalObj = {};
-    this.frames = (delay / 1000) * 60;
-
-    this._trKeys(this.endObj, function(tween, key) {
-        if (key in tween.obj) {
-            tween.endObjStep[key] = (tween.endObj[key] - tween.obj[key]) / tween.frames;
-        } else {
-            delete tween.endObj[key];
-        }
-    });
-
     this.delay = delay;
     return this;
 };
@@ -283,7 +284,8 @@ Tween.prototype.to = function(endObj, delay) {
  * Chain another tween. Pass a null to clear the chain.
  */
 Tween.prototype.chain = function(tween) {
-    this.chain = tween;
+    this.chainedTween = tween;
+    return this;
 }
 
 /**
@@ -310,19 +312,23 @@ Tween.prototype.update = function() {
         return false;
     }
 
-    // Update frame
+    // Frame : update each value with it's step
     this._trKeys(this.endObj, function(tween, key) {
         tween.obj[key] += tween.endObjStep[key];
     });
 
+    // Set final value and finish call. Is there a chained tween?
     if (--this.frames == 0) {
-        // Set final value and finish call
         this._trKeys(this.endObj, function(tween, key) {
             tween.obj[key] = tween.endObj[key];
         });
 
-        this.isRunning = false;
+        this._clearTween();
         this.onFinishCall(this.obj);
+
+        if (this.chainedTween) {
+            this.chainedTween.start();
+        }
     } else {
         // Just update call
         this.onUpdateCall(this.obj);
@@ -338,13 +344,26 @@ Tween.prototype.start = function() {
     this.isRunning = true;
     var _this = this;
 
+    //First calculation of frames and steps
+    if (this.endObjStep == null) {
+        this.frames = (this.delay / 1000) * 60;
+        this.endObjStep = {};
+
+        this._trKeys(this.endObj, function(tween, key) {
+            if (key in tween.obj) {
+                tween.endObjStep[key] = (tween.endObj[key] - tween.obj[key]) / tween.frames;
+            } else {
+                delete tween.endObj[key];
+            }
+        });
+    }
+
     var _tween = function () {
         if (!_this.isRunning) {
             return;
         }
 
         if (_this.update()) {
-            console.log("update", _this.obj);
             requestAnimationFrame(_tween);
         }
     };
@@ -380,7 +399,15 @@ window.onload = function() {
     $("#loading").fadeOut(2000, function() {
         $("#game").fadeIn();
     });
+
+    obj = {x: 0}
+    tw1 = new Tween(obj).to({x: 10})
+    tw2 = new Tween(obj).to({x: 0})
+    //tw1.chain(tw2)
+    //tw2.chain(tw1)
+    tw1.start()
 }
+
 
 </script>
 
