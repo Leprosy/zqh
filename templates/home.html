@@ -235,14 +235,27 @@ Game._rotate = function(d) {
  * Constructor
  */
 function Tween(obj) {
+    this.chain = null;
+    this.isRunning = false;
     this.endObj = null;
     this.endObjStep = null;
     this.frames = 0;
     this.delay = 0;
     this.obj = obj;
+    this.originalObj = {};
     this.onUpdateCall = function() {};
     this.onFinishCall = function() {};
 };
+
+Tween.prototype._trKeys = function(obj, call) {
+    var keys = Object.keys(obj);
+
+    for (var i in keys) {
+        var key = keys[i];
+
+        call(this, key);
+    }
+}
 
 /**
  * Sets a new tween for the object
@@ -251,22 +264,27 @@ Tween.prototype.to = function(endObj, delay) {
     if (typeof delay == "undefined") delay = 500;
     this.endObj = endObj;
     this.endObjStep = {};
+    this.originalObj = {};
     this.frames = (delay / 1000) * 60;
-    var endKeys = Object.keys(this.endObj);
 
-    for (var i in endKeys) {
-        var key = endKeys[i];
-
-        if (key in this.obj) {
-            this.endObjStep[key] = (this.endObj[key] - this.obj[key]) / this.frames;
+    this._trKeys(this.endObj, function(tween, key) {
+        if (key in tween.obj) {
+            tween.endObjStep[key] = (tween.endObj[key] - tween.obj[key]) / tween.frames;
         } else {
-            delete this.endObj[key];
+            delete tween.endObj[key];
         }
-    }
+    });
 
     this.delay = delay;
     return this;
 };
+
+/**
+ * Chain another tween. Pass a null to clear the chain.
+ */
+Tween.prototype.chain = function(tween) {
+    this.chain = tween;
+}
 
 /**
  * Sets the update callback
@@ -288,25 +306,22 @@ Tween.prototype.onFinish = function(call) {
  * Update one frame
  */
 Tween.prototype.update = function() {
-    if (this.frames == 0) return false;
-
-    // Update frame
-    var endKeys = Object.keys(this.endObj);
-
-    for (var i in endKeys) {
-        var key = endKeys[i];
-        this.obj[key] += this.endObjStep[key];
+    if (this.frames == 0) {
+        return false;
     }
 
-    this.frames--;
+    // Update frame
+    this._trKeys(this.endObj, function(tween, key) {
+        tween.obj[key] += tween.endObjStep[key];
+    });
 
-    if (this.frames == 0) {
+    if (--this.frames == 0) {
         // Set final value and finish call
-        for (var i in endKeys) {
-            var key = endKeys[i];
-            this.obj[key] = this.endObj[key];
-        }
+        this._trKeys(this.endObj, function(tween, key) {
+            tween.obj[key] = tween.endObj[key];
+        });
 
+        this.isRunning = false;
         this.onFinishCall(this.obj);
     } else {
         // Just update call
@@ -320,16 +335,31 @@ Tween.prototype.update = function() {
  * Starts the tween
  */
 Tween.prototype.start = function() {
+    this.isRunning = true;
     var _this = this;
 
     var _tween = function () {
+        if (!_this.isRunning) {
+            return;
+        }
+
         if (_this.update()) {
+            console.log("update", _this.obj);
             requestAnimationFrame(_tween);
         }
     };
 
     _tween();
-}
+    return this;
+};
+
+/**
+ * Stops the tween
+ */
+Tween.prototype.stop = function() {
+    this.isRunning = false;
+    return this;
+};
 
 
 /**
@@ -351,12 +381,6 @@ window.onload = function() {
         $("#game").fadeIn();
     });
 }
-
-// test code
-/* var tw = new Tween({x: 0, y: 0}).to({x: 100, z: 100})
-                                .onUpdate(function(obj){ console.info("twupdate", obj)})
-                                .onFinish(function(obj){ console.info("twfinish", obj)});
-console.log(tw); */
 
 </script>
 
