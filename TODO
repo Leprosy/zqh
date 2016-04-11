@@ -1,0 +1,1 @@
+* Bug in map creation, when the player can start outside any room.
