@@ -3,7 +3,6 @@
     <head>
         <style>
         .content{width:80%;margin:1em auto;}
-        #{opacity:0;}
         </style>
         <link rel="stylesheet" href="css/pure.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,12 +11,6 @@
     </head>
 
     <body>
-        <div class="content" id="loading">
-            <h1>Loading...</h1>
-        </div>
-
-        <h1>{{name}}</h1>
-
         <div class="content" id="game">
             <div class="pure-g">
                 <div class="pure-u-1-5">
@@ -51,8 +44,7 @@
         <script src="js/jquery.js"></script>
         <script src="js/crafty.js"></script>
         <script src="js/three.js"></script>
-        <!-- <script src="http://threejs.org/examples/js/controls/TrackballControls.js"></script> -->
-        <!--  <script src="js/game.js"></script> -->
+        <script src="js/lib.js"></script>
 <script>
 /**
  * 2d stuff
@@ -114,18 +106,6 @@ Game.init3d = function() {
     Game.camera = new THREE.PerspectiveCamera(75, 1.2, 0.1, 10000);
     Game.camera.position.z = 5000;
 
-    //Debug controller
-    /* Game.controls = new THREE.TrackballControls(Game.camera);
-    Game.controls.rotateSpeed = 1.0;
-    Game.controls.zoomSpeed = 1.2;
-    Game.controls.panSpeed = 0.8;
-    Game.controls.noZoom = false;
-    Game.controls.noPan = false;
-    Game.controls.staticMoving = true;
-    Game.controls.dynamicDampingFactor = 0.3;
-    Game.controls.keys = [ 65, 83, 68 ];
-    Game.controls.addEventListener('change', Game.render); */
-
     // Light
     Game.light = new THREE.PointLight(0xFFFFFF, Game.lightSize, Game.size * 10);
     Game.scene.add(Game.light);
@@ -170,6 +150,18 @@ Game.loadMap = function(map) {
         Game.scene.add(mesh);
     }
 
+    //Render sprites
+    Game.sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                     map: new THREE.TextureLoader().load("img/sprites/sprite1.png"),
+                     //color: 0xffffff,
+                     fog: false }));
+
+    Game.sprite.scale.multiplyScalar(40);
+    Game.sprite.position.x = map.warp.start.x * Game.size;
+    Game.sprite.position.z = map.warp.start.y * Game.size;
+    Game.sprite.position.y = 0;
+    Game.scene.add(Game.sprite);
+
     // Set player position
     Game.camera.position.x = map.warp.start.x * Game.size;
     Game.camera.position.z = map.warp.start.y * Game.size;
@@ -189,7 +181,6 @@ Game.render = function() {
  */
 Game.animate = function() {
     requestAnimationFrame(Game.animate);
-    //Game.controls.update();
     Game.render();
 };
 
@@ -247,164 +238,6 @@ Game.keyboardHandler = function(e) {
 };
 
 
-/**
- * Utils, helpers and whatnot
- */
-
-/**
- * Tween class
- * @author: Leprosy
- * @created: Apr 6 2016
- */
-
-/**
- * Constructor
- */
-function Tween(obj) {
-    this.isRunning = false;
-
-    this.endObj = null;
-    this.endObjStep = null;
-
-    this.frames = 0;
-    this.delay = 0;
-    this.obj = obj;
-    this.originalObj = {};
-    this.chainedTween = null;
-
-    this.onUpdateCall = function() {};
-    this.onFinishCall = function() {};
-};
-
-Tween.prototype._trKeys = function(obj, call) {
-    var keys = Object.keys(obj);
-
-    for (var i in keys) {
-        var key = keys[i];
-
-        call(this, key);
-    }
-}
-
-Tween.prototype._clearTween = function() {
-    this.isRunning = false;
-    this.endObjStep = null;
-    this.frames = 0;
-}
-
-/**
- * Sets a new tween for the object
- */
-Tween.prototype.to = function(endObj, delay) {
-    if (typeof delay == "undefined") {
-        delay = 500;
-    }
-
-    this._clearTween();
-    this.endObj = endObj;
-    this.delay = delay;
-    return this;
-};
-
-/**
- * Chain another tween. Pass a null to clear the chain.
- */
-Tween.prototype.chain = function(tween) {
-    this.chainedTween = tween;
-    return this;
-}
-
-/**
- * Sets the update callback
- */
-Tween.prototype.onUpdate = function(call) {
-    this.onUpdateCall = call;
-    return this;
-};
-
-/**
- * Sets the finish callback
- */
-Tween.prototype.onFinish = function(call) {
-    this.onFinishCall = call;
-    return this;
-};
-
-/**
- * Update one frame
- */
-Tween.prototype.update = function() {
-    if (this.frames == 0) {
-        return false;
-    }
-
-    // Frame : update each value with it's step
-    this._trKeys(this.endObj, function(tween, key) {
-        tween.obj[key] += tween.endObjStep[key];
-    });
-
-    // Set final value and finish call. Is there a chained tween?
-    if (--this.frames == 0) {
-        this._trKeys(this.endObj, function(tween, key) {
-            tween.obj[key] = tween.endObj[key];
-        });
-
-        this._clearTween();
-        this.onFinishCall(this.obj);
-
-        if (this.chainedTween) {
-            this.chainedTween.start();
-        }
-    } else {
-        // Just update call
-        this.onUpdateCall(this.obj);
-    }
-
-    return true;
-};
-
-/**
- * Starts the tween
- */
-Tween.prototype.start = function() {
-    this.isRunning = true;
-    var _this = this;
-
-    //First calculation of frames and steps
-    if (this.endObjStep == null) {
-        this.frames = (this.delay / 1000) * 60;
-        this.endObjStep = {};
-
-        this._trKeys(this.endObj, function(tween, key) {
-            if (key in tween.obj) {
-                tween.endObjStep[key] = (tween.endObj[key] - tween.obj[key]) / tween.frames;
-            } else {
-                delete tween.endObj[key];
-            }
-        });
-    }
-
-    var _tween = function () {
-        if (!_this.isRunning) {
-            return;
-        }
-
-        if (_this.update()) {
-            requestAnimationFrame(_tween);
-        }
-    };
-
-    _tween();
-    return this;
-};
-
-/**
- * Stops the tween
- */
-Tween.prototype.stop = function() {
-    this.isRunning = false;
-    return this;
-};
 
 
 /**
@@ -416,18 +249,13 @@ window.onload = function() {
     Game.animate();
 
     // Load a map and render in 2d and 3d
-    $.get("backend.php/map/8", function(data) {
+    $.get("backend.php/map/1", function(data) {
         renderMap(data.map);
         Game.loadMap(data.map);
     });
 
     // Set keyboard handler
     $(window).keydown(Game.keyboardHandler);
-
-    // Show game screen
-    $("#loading").fadeOut(2000, function() {
-        $("#game").fadeIn();
-    });
 }
 
 
