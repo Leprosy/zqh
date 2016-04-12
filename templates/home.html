@@ -124,7 +124,6 @@ Game.init3d = function() {
     Game.renderer = new THREE.WebGLRenderer();
     Game.renderer.setSize($container.width(), $container.width() * 0.8);
     Game.camera = new THREE.PerspectiveCamera(75, 1.2, 0.1, 10000);
-    Game.camera.position.z = 5000;
 
     // Light
     Game.light = new THREE.PointLight(0xFFFFFF, Game.lightSize, Game.size * 10);
