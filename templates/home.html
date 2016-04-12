@@ -48,15 +48,32 @@
         <script src="js/lib.js"></script>
 <script>
 /**
- * 2d stuff
- */
-function renderMap(map) {
+* Game stuff
+*/
+var Game = {};
+Game.size = 100;
+Game.map = null;
+Game.lightSize = 1;
+Game.lightVar = 0.1;
+Game.moveSpeed = 250;
+Game.isMoving = false;
+Game.debug = false;
+
+// @todo: Should refactor these into a class
+Game.player = {};
+Game.player.x = 0;
+Game.player.y = 0;
+
+
+
+
+Game.render2dMap = function(map) {
     var tile = $("#map").width() / map.width;
+    Game.map2dSize = tile;
 
     Crafty.init(map.width * tile, map.height * tile, "map");
     Crafty.pixelart(true);
     Crafty.background('#004');
-    console.log(map);
 
     for (i = 0; i < map.floors.length; ++i) {
         var floor = map.floors[i];
@@ -74,26 +91,28 @@ function renderMap(map) {
               .color("#ffffff");
     }
 
-    Crafty.e("2D, Canvas, Color")
-          .attr({ x: map.warp.start.x * tile, y: map.warp.start.y * tile, w: tile - 1, h: tile - 1 })
-          .color("#00ff00");
-    Crafty.e("2D, Canvas, Color")
-          .attr({ x: map.warp.end.x * tile, y: map.warp.end.y * tile, w: tile - 1, h: tile - 1 })
-          .color("#ff00ff");
+    for (i = 0; i < map.objects.length; ++i) {
+        var obj = map.objects[i];
+        var color = "";
 
+        switch(obj.v) {
+            case 1:
+                color = "#00ff00";
+                break;
+            case 2:
+                color = "#ff00ff";
+                break;
+            default:
+                color = "#ffff00";
+                break;
+        }
+
+        var ent = Crafty.e("2D, Canvas, Color")
+                        .attr({ x: obj.x * tile, y: obj.y * tile, w: tile - 1, h: tile - 1 })
+                        .color(color);
+        if (obj.v == 1) Game.map2dPoint = ent;
+    }
 }
-
-
-
-/**
- * 3d stuff
- */
-var Game = {};
-Game.size = 100;
-Game.lightSize = 1;
-Game.lightVar = 0.1;
-Game.moveSpeed = 250;
-Game.moving = false;
 
 /**
  * Initializes 3d components
