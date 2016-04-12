@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * Map module
  */
 namespace Lib;
 
@@ -46,8 +47,8 @@ class Room {
      * @return boolean
      */
     public function inside($map) {
-        return ($this->x + $this->width < $map->getWidth() - 1) &&
-               ($this->y + $this->height < $map->getHeight() - 1);
+        return ($this->x + $this->width < $map->width- 1) &&
+               ($this->y + $this->height < $map->height - 1);
     }
 
     /**
@@ -70,9 +71,9 @@ class Room {
  *
  */
 class Map {
+    public $width;
+    public $height;
     private $rooms;
-    private $width;
-    private $height;
     private $map;
     private $json;
 
@@ -81,7 +82,7 @@ class Map {
         $this->map = array(
                 "floors" => array(array()),
                 "roofs" => array(array()),
-                "warp" => array()
+                "warp" => array() //@todo: this would be objects(and start/end points are objects)
         );
 
         for ($x = 0; $x < $width; $x++) {
@@ -93,14 +94,6 @@ class Map {
 
         $this->width = $width;
         $this->height = $height;
-    }
-
-    public function getWidth() {
-        return $this->width;
-    }
-
-    public function getHeight() {
-        return $this->height;
     }
 
     public function getJSON() {
@@ -117,6 +110,7 @@ class Map {
         $this->json["roofs"] = array();
         $this->json["walls"] = array();
         $this->json["warp"] = array();
+        $this->json["name"] = $this->generateName();
 
         // Rooms and corridors
         $this->generateRooms($nRooms);
@@ -127,10 +121,10 @@ class Map {
         //Warp points
         $firstR = $this->rooms[0];
         $lastR = $this->rooms[$nRooms - 1];
-        $this->map["warp"]["start"]["x"] = rand($firstR->x + 1, $firstR->x + $firstR->width - 2);
-        $this->map["warp"]["start"]["y"] = rand($firstR->y + 1, $firstR->y + $firstR->width - 2);
-        $this->map["warp"]["end"]["x"] = rand($lastR->x + 1, $lastR->x + $lastR->width - 2);
-        $this->map["warp"]["end"]["y"] = rand($lastR->y + 1, $lastR->y + $lastR->width - 2);
+        $this->map["warp"]["start"]["x"] = rand($firstR->x + 2, $firstR->x + $firstR->width - 2);
+        $this->map["warp"]["start"]["y"] = rand($firstR->y + 2, $firstR->y + $firstR->width - 2);
+        $this->map["warp"]["end"]["x"] = rand($lastR->x + 2, $lastR->x + $lastR->width - 2);
+        $this->map["warp"]["end"]["y"] = rand($lastR->y + 2, $lastR->y + $lastR->width - 2);
 
         // Compile JSON
         // Map
@@ -254,5 +248,12 @@ class Map {
                 }
             }
         }
+    }
+
+    public function generateName() {
+        $base = array("Cavern", "Labyrinth", "Maze", "Cave", "Pit", "Dungeon", "Lair", "Cove", "Hole");
+        $adj = array("Sorrow", "Despair", "Lost Souls", "Blood", "Doom", "Death");
+
+        return $base[array_rand($base)] . " of " . $adj[array_rand($adj)];
     }
 }
