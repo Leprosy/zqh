@@ -86,6 +86,7 @@ class Map {
     }
 
     public function getJSON() {
+        $this->map["name"] = $this->name;
         return $this->map;
     }
 
