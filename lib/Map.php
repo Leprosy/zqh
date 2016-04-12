@@ -86,7 +86,6 @@ class Map {
     }
 
     public function getJSON() {
-        $this->map["name"] = $this->name;
         return $this->map;
     }
 
@@ -177,6 +176,10 @@ class Map {
         $this->map["floors"] = $floors;
         $this->map["roofs"] = $roofs;
         $this->map["objects"] = $objects;
+
+        $this->map["width"] =$this->width;
+        $this->map["height"] =$this->height;
+        $this->map["name"] = $this->name;
     }
 
     public function generateRooms($nRooms) {
@@ -263,8 +266,10 @@ class Map {
     }
 
     public function generateName() {
-        $base = array("Cavern", "Labyrinth", "Maze", "Cave", "Pit", "Dungeon", "Lair", "Cove", "Hole");
-        $adj = array("Sorrow", "Despair", "Lost Souls", "Blood", "Doom", "Death");
+        $base = array("Fortress", "Cavern", "Labyrinth", "Maze", "Cave", "Pit", "Dungeon", "Lair", "Path", "Hole",
+                      "Cathedral", "Temple", "Prison", "Tunnel", "Gallery", "Hall", "Keep", "Crypt", "Chamber");
+        $adj = array("Sorrow", "Despair", "Lost Souls", "Blood", "Doom", "Death", "the Lost", "the Damned", "the Undead",
+                     "the Cursed", "Suffering", "Suicide", "Pain", "Solitude");
 
         $this->name = $base[array_rand($base)] . " of " . $adj[array_rand($adj)];
     }
