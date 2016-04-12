@@ -170,21 +170,28 @@ Game.loadMap = function(map) {
     }
 
     //Render sprites
-    Game.sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-                     map: new THREE.TextureLoader().load("img/sprites/sprite1.png"),
-                     //color: 0xffffff,
-                     fog: false }));
+    for (i = 0; i < map.objects.length; ++i) {
+        var obj = map.objects[i];
 
-    Game.sprite.scale.multiplyScalar(40);
-    Game.sprite.position.x = map.warp.start.x * Game.size;
-    Game.sprite.position.z = map.warp.start.y * Game.size;
-    Game.sprite.position.y = 0;
-    Game.scene.add(Game.sprite);
+        Game.sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                         map: new THREE.TextureLoader().load("img/sprites/sprite1.png"),
+                         //color: 0xffffff,
+                         fog: false }));
 
-    // Set player position
-    Game.camera.position.x = map.warp.start.x * Game.size;
-    Game.camera.position.z = map.warp.start.y * Game.size;
+        Game.sprite.scale.multiplyScalar(40);
+        Game.sprite.position.x = obj.x * Game.size;
+        Game.sprite.position.z = obj.y * Game.size;
+        Game.sprite.position.y = 0;
+        Game.scene.add(Game.sprite);
+    }
+
+    // Set player position. The first object is the starting point.
+    var start = map.objects[0];
+    Game.camera.position.x = start.x * Game.size;
+    Game.camera.position.z = start.y * Game.size;
     Game.camera.position.y = 0;
+    Game.player.x = start.x;
+    Game.player.y = start.y;
 };
 
 /**
