@@ -211,32 +211,59 @@ Game.animate = function() {
 };
 
 /**
+ * Collision with an object or wall
+ */
+Game.checkCollision = function(x, y) {
+    return (Game.map.colmap[x][y] == 1);
+}
+
+Game._drawArrow = function(origin, dir, length) {
+    var length = length * Game.size;
+    var hex = 0xffff00;
+    var arrowHelper = new THREE.ArrowHelper(dir, origin, lenght, hex);
+    Game.scene.add(arrowHelper);
+}
+
+/**
  * Player rotations and translations
  */
 Game.forward = function() { Game._move(-1); };
 Game.backward = function() { Game._move(1); };
 Game._move = function(d) {
-    if (!Game.moving) {
-        Game.moving = true;
+    if (!Game.isMoving) {
         var x = Game.camera.position.x;
         var z = Game.camera.position.z;
         var vert = Math.round(Math.cos(Game.camera.rotation.y));
         var horz = Math.round(Math.sin(Game.camera.rotation.y));
-        var tw = new Tween(Game.camera.position).to({ x: x + d * horz * Game.size,
-                                                      z: z + d * vert * Game.size }, Game.moveSpeed)
-                                                .onFinish(function() { Game.moving = false})
-                                                .start();
+        var newx = x + d * horz * Game.size;
+        var newz = z + d * vert * Game.size;
+
+        var newPx = Game.player.x + d * horz;
+        var newPy = Game.player.y + d * vert;
+
+        if (Game.checkCollision(newPx, newPy)) {;
+            return;
+        } else {
+            Game.isMoving = true;
+            Game.player.x = newPx;
+            Game.player.y = newPy;
+            Game.map2dPoint.x = newPx * Game.map2dSize;
+            Game.map2dPoint.y = newPy * Game.map2dSize;
+            var tw = new Tween(Game.camera.position).to({ x: newx, z: newz }, Game.moveSpeed)
+                                                    .onFinish(function() { Game.isMoving = false })
+                                                    .start();
+        }
     }
 };
 
 Game.rotateRight = function() { Game._rotate(-1); };
 Game.rotateLeft = function() { Game._rotate(1); };
 Game._rotate = function(d) {
-    if (!Game.moving) {
-        Game.moving = true;
+    if (!Game.isMoving) {
+        Game.isMoving = true;
         var y = Game.camera.rotation.y;
         var tw = new Tween(Game.camera.rotation).to({ y: y + d * (Math.PI / 2) }, Game.moveSpeed)
-                                                .onFinish(function() { Game.moving = false})
+                                                .onFinish(function() { Game.isMoving = false})
                                                 .start();
     }
 }
@@ -276,7 +303,9 @@ window.onload = function() {
 
     // Load a map and render in 2d and 3d
     $.get("backend.php/map/1", function(data) {
-        renderMap(data.map);
+        Game.map = data.map;
+        $("h1").html(data.map.name);
+        Game.render2dMap(data.map);
         Game.loadMap(data.map);
     });
 
