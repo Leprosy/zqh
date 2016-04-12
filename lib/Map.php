@@ -92,6 +92,7 @@ class Map {
     public function generate($nRooms) {
         //Data structure
         $this->map = array(
+                "start" => array(),
                 "walls" => array(),
                 "colmap" => array(array()),
                 "floors" => array(array()),
@@ -108,18 +109,24 @@ class Map {
             }
         }
 
-        //Name
+        // Name
         $this->generateName();
 
         // Rooms and corridors
         $this->generateRooms($nRooms);
         $this->generateCorridors();
 
-        //Objects(start points, deco, monster generators...)
+        // Starting point
         $firstR = $this->rooms[0];
-        $lastR = $this->rooms[$nRooms - 1];
-        $this->map["objects"][rand($firstR->x + 2, $firstR->x + $firstR->width - 2)][rand($firstR->y + 2, $firstR->y + $firstR->width - 2)] = 1;
-        $this->map["objects"][rand($lastR->x + 2, $lastR->x + $lastR->width - 2)][rand($lastR->y + 2, $lastR->y + $lastR->width - 2)] = 2;
+        $this->map["start"]["x"] = rand($firstR->x + 1, $firstR->x + $firstR->width - 1);
+        $this->map["start"]["y"] = rand($firstR->y + 1, $firstR->y + $firstR->width - 1);
+        $this->map["start"]["debug"] = $this->map["start"]["x"] . "-" . $this->map["start"]["y"] . " " .
+                                       $firstR->x . "," . $firstR->y . "," . $firstR->x + $firstR->width . "," . $firstR->y + $firstR->height;
+
+        //Objects(points, deco, monster generators...)
+        //Dummy object
+        /* $lastR = $this->rooms[$nRooms - 1];
+        $this->map["objects"][rand($lastR->x + 2, $lastR->x + $lastR->width - 2)][rand($lastR->y + 2, $lastR->y + $lastR->width - 2)] = 2; */
 
         // Compile map json
         // Map

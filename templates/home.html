@@ -91,27 +91,10 @@ Game.render2dMap = function(map) {
               .color("#ffffff");
     }
 
-    for (i = 0; i < map.objects.length; ++i) {
-        var obj = map.objects[i];
-        var color = "";
-
-        switch(obj.v) {
-            case 1:
-                color = "#00ff00";
-                break;
-            case 2:
-                color = "#ff00ff";
-                break;
-            default:
-                color = "#ffff00";
-                break;
-        }
-
-        var ent = Crafty.e("2D, Canvas, Color")
-                        .attr({ x: obj.x * tile, y: obj.y * tile, w: tile - 1, h: tile - 1 })
-                        .color(color);
-        if (obj.v == 1) Game.map2dPoint = ent;
-    }
+    //for (i = 0; i < map.objects.length; ++i) {}
+    Game.map2dPoint = Crafty.e("2D, Canvas, Color")
+                            .attr({ x: map.start.x * tile, y: map.start.y * tile, w: tile - 1, h: tile - 1 })
+                            .color("#00ff00");
 }
 
 /**
@@ -186,12 +169,11 @@ Game.loadMap = function(map) {
     }
 
     // Set player position. The first object is the starting point.
-    var start = map.objects[0];
-    Game.camera.position.x = start.x * Game.size;
-    Game.camera.position.z = start.y * Game.size;
+    Game.camera.position.x = map.start.x * Game.size;
+    Game.camera.position.z = map.start.y * Game.size;
     Game.camera.position.y = 0;
-    Game.player.x = start.x;
-    Game.player.y = start.y;
+    Game.player.x = map.start.x;
+    Game.player.y = map.start.y;
 };
 
 /**
