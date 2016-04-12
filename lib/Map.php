@@ -118,10 +118,9 @@ class Map {
 
         // Starting point
         $firstR = $this->rooms[0];
-        $this->map["start"]["x"] = rand($firstR->x + 1, $firstR->x + $firstR->width - 1);
-        $this->map["start"]["y"] = rand($firstR->y + 1, $firstR->y + $firstR->width - 1);
-        $this->map["start"]["debug"] = $this->map["start"]["x"] . "-" . $this->map["start"]["y"] . " " .
-                                       $firstR->x . "," . $firstR->y . "," . $firstR->x + $firstR->width . "," . $firstR->y + $firstR->height;
+        $this->map["start"]["x"] = $firstR->x + rand(2, $firstR->width - 2);
+        $this->map["start"]["y"] = $firstR->y + rand(2, $firstR->height - 2);
+        $this->map["start"]["debug"] = sprintf("roomxy: %s, %s - roomwh: %s, %s", $firstR->x, $firstR->y, $firstR->x + $firstR->width, $firstR->y + $firstR->height);
 
         //Objects(points, deco, monster generators...)
         //Dummy object
