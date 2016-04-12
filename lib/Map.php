@@ -73,70 +73,70 @@ class Room {
 class Map {
     public $width;
     public $height;
-    private $rooms;
-    private $map;
-    private $json;
+    public $name;
+    public $rooms;
+    public $map;
 
     public function __construct($width, $height) {
+        $this->name = "";
         $this->rooms = array();
-        $this->map = array(
-                "floors" => array(array()),
-                "roofs" => array(array()),
-                "warp" => array() //@todo: this would be objects(and start/end points are objects)
-        );
-
-        for ($x = 0; $x < $width; $x++) {
-            for ($y = 0; $y < $height; $y++) {
-                $this->map["floors"][$x][$y] = 0;
-                $this->map["roofs"][$x][$y] = 0;
-            }
-        }
-
+        $this->map = null;
         $this->width = $width;
         $this->height = $height;
     }
 
     public function getJSON() {
-        return $this->json;
+        return $this->map;
     }
 
     public function generate($nRooms) {
-        $this->json = array();
+        //Data structure
+        $this->map = array(
+                "walls" => array(),
+                "colmap" => array(array()),
+                "floors" => array(array()),
+                "roofs" => array(array()),
+                "objects" => array(array()),
+        );
 
-        // Meta
-        $this->json["width"] = $this->width;
-        $this->json["height"] = $this->height;
-        $this->json["floors"] = array();
-        $this->json["roofs"] = array();
-        $this->json["walls"] = array();
-        $this->json["warp"] = array();
-        $this->json["name"] = $this->generateName();
+        for ($x = 0; $x < $this->width; $x++) {
+            for ($y = 0; $y < $this->height; $y++) {
+                $this->map["colmap"][$x][$y] = 0;
+                $this->map["floors"][$x][$y] = 0;
+                $this->map["roofs"][$x][$y] = 0;
+                $this->map["objects"][$x][$y] = 0;
+            }
+        }
+
+        //Name
+        $this->generateName();
 
         // Rooms and corridors
         $this->generateRooms($nRooms);
         $this->generateCorridors();
 
-        //Objects...monsters...?
-
-        //Warp points
+        //Objects(start points, deco, monster generators...)
         $firstR = $this->rooms[0];
         $lastR = $this->rooms[$nRooms - 1];
-        $this->map["warp"]["start"]["x"] = rand($firstR->x + 2, $firstR->x + $firstR->width - 2);
-        $this->map["warp"]["start"]["y"] = rand($firstR->y + 2, $firstR->y + $firstR->width - 2);
-        $this->map["warp"]["end"]["x"] = rand($lastR->x + 2, $lastR->x + $lastR->width - 2);
-        $this->map["warp"]["end"]["y"] = rand($lastR->y + 2, $lastR->y + $lastR->width - 2);
+        $this->map["objects"][rand($firstR->x + 2, $firstR->x + $firstR->width - 2)][rand($firstR->y + 2, $firstR->y + $firstR->width - 2)] = 1;
+        $this->map["objects"][rand($lastR->x + 2, $lastR->x + $lastR->width - 2)][rand($lastR->y + 2, $lastR->y + $lastR->width - 2)] = 2;
 
-        // Compile JSON
+        // Compile map json
         // Map
+        $floors = array();
+        $roofs = array();
+        $objects = array();
+
         for ($x = 1; $x < $this->width - 1; $x++) {
             for ($y = 1; $y < $this->height - 1; $y++) {
                 if ($this->map["floors"][$x][$y] != 0) {
-                    $this->json["floors"][] = array(
+                    $floors[] = array(
                             "x" => $x,
                             "y" => $y,
                             "v" => $this->map["floors"][$x][$y]
                     );
-                    $this->json["roofs"][] = array(
+
+                    $roofs[] = array(
                             "x" => $x,
                             "y" => $y,
                             "v" => $this->map["roofs"][$x][$y]
@@ -145,15 +145,16 @@ class Map {
                     // Draw walls
                     for ($i = -1; $i < 2; $i++) {
                         if ($this->map["floors"][$x][$y + $i] == 0) {
-                            $this->json["walls"][] = array(
+                            $this->map["colmap"][$x][$y + $i] = 1;
+                            $this->map["walls"][] = array(
                                     "x" => $x,
                                     "y" => $y + $i,
-                                    "v" => 1 // Deco
+                                    "v" => 1 // @todo: How we can set the wall deco?
                             );
                         }
-
                         if ($this->map["floors"][$x + $i][$y] == 0) {
-                            $this->json["walls"][] = array(
+                            $this->map["colmap"][$x + $i][$y] = 1;
+                            $this->map["walls"][] = array(
                                     "x" => $x + $i,
                                     "y" => $y,
                                     "v" => 1 // @todo: How we can set the wall deco?
@@ -161,10 +162,20 @@ class Map {
                         }
                     }
                 }
+
+                if ($this->map["objects"][$x][$y] != 0) {
+                    $objects[] = array(
+                            "x" => $x,
+                            "y" => $y,
+                            "v" => $this->map["objects"][$x][$y]
+                            );
+                }
             }
         }
-        $this->json["warp"]["start"] = $this->map["warp"]["start"];
-        $this->json["warp"]["end"] = $this->map["warp"]["end"];
+
+        $this->map["floors"] = $floors;
+        $this->map["roofs"] = $roofs;
+        $this->map["objects"] = $objects;
     }
 
     public function generateRooms($nRooms) {
@@ -209,7 +220,7 @@ class Map {
                     $dx = $room->x + $x;
                     $dy = $room->y + $y;
                     $this->map["floors"][$dx][$dy] = $room->floor;
-                    $this->map["roof"][$dx][$dy] = $room->roof;
+                    $this->map["roofs"][$dx][$dy] = $room->roof;
                 }
             }
         }
@@ -254,6 +265,6 @@ class Map {
         $base = array("Cavern", "Labyrinth", "Maze", "Cave", "Pit", "Dungeon", "Lair", "Cove", "Hole");
         $adj = array("Sorrow", "Despair", "Lost Souls", "Blood", "Doom", "Death");
 
-        return $base[array_rand($base)] . " of " . $adj[array_rand($adj)];
+        $this->name = $base[array_rand($base)] . " of " . $adj[array_rand($adj)];
     }
 }
