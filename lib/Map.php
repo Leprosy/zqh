@@ -77,12 +77,13 @@ class Map {
     public $rooms;
     public $map;
 
-    public function __construct($width, $height) {
+    public function __construct($width, $height, $open = false) {
         $this->name = "";
         $this->rooms = array();
         $this->map = null;
         $this->width = $width;
         $this->height = $height;
+        $this->open = true; //$open;
     }
 
     public function getJSON() {
@@ -142,11 +143,13 @@ class Map {
                             "v" => $this->map["floors"][$x][$y]
                     );
 
-                    $roofs[] = array(
-                            "x" => $x,
-                            "y" => $y,
-                            "v" => $this->map["roofs"][$x][$y]
-                    );
+                    if ($this->map["roofs"][$x][$y] != 0) {
+                        $roofs[] = array(
+                                "x" => $x,
+                                "y" => $y,
+                                "v" => $this->map["roofs"][$x][$y]
+                        );
+                    }
 
                     // Draw walls
                     for ($i = -1; $i < 2; $i++) {
@@ -225,12 +228,22 @@ class Map {
 
         // Add rooms to map array
         foreach ($this->rooms as $room) {
+            $addRoof = false;
+
+            if (!$this->open || rand(0, 10) < 5) {
+                $addRoof = true;
+            }
+
             for ($x = 0; $x < $room->width; ++$x) {
                 for ($y = 0; $y < $room->height; ++$y) {
                     $dx = $room->x + $x;
                     $dy = $room->y + $y;
                     $this->map["floors"][$dx][$dy] = $room->floor;
-                    $this->map["roofs"][$dx][$dy] = $room->roof;
+                    $this->map["open"] = $this->open;
+
+                    if ($addRoof) {
+                        $this->map["roofs"][$dx][$dy] = $room->roof;
+                    }
                 }
             }
         }
