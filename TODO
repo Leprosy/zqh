@@ -1,1 +1,1 @@
-* Bug in map creation, when the player can start outside any room.
+* Check skydome radius. Some arifacts in long corridors are being shown.
