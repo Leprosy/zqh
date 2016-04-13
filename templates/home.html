@@ -51,7 +51,7 @@
 * Game stuff
 */
 var Game = {};
-Game.size = 100;
+Game.size = 10;
 Game.map = null;
 Game.lightSize = 1;
 Game.lightVar = 0.1;
@@ -106,7 +106,7 @@ Game.init3d = function() {
     Game.scene = new THREE.Scene();
     Game.renderer = new THREE.WebGLRenderer();
     Game.renderer.setSize($container.width(), $container.width() * 0.8);
-    Game.camera = new THREE.PerspectiveCamera(75, 1.2, 0.1, 10000);
+    Game.camera = new THREE.PerspectiveCamera(75, 1.2, 1, 150 * Game.size);
 
     // Light
     Game.light = new THREE.PointLight(0xFFFFFF, Game.lightSize, Game.size * 10);
@@ -116,6 +116,16 @@ Game.init3d = function() {
     Game.lightTween1.chain(Game.lightTween2);
     Game.lightTween2.chain(Game.lightTween1);
     Game.lightTween1.start(); //@todo: easing, tween the position
+
+    // Sky
+    Game.sky = new THREE.Mesh(
+        new THREE.SphereGeometry(50 * Game.size, 20, 20),
+        new THREE.MeshBasicMaterial({
+            map: THREE.ImageUtils.loadTexture('img/textures/sky1.png'),
+            side: THREE.DoubleSide
+        })
+    );
+    Game.scene.add(Game.sky);
 
     // Finish
     $container.append(Game.renderer.domElement);
@@ -180,7 +190,10 @@ Game.loadMap = function(map) {
  * 3d render update
  */
 Game.render = function() {
+    // Light & skydome in position
     Game.light.position.copy(Game.camera.position);
+    Game.sky.position.copy(Game.camera.position);
+
     Game.renderer.render(Game.scene, Game.camera);
 };
 
@@ -284,11 +297,13 @@ window.onload = function() {
     Game.animate();
 
     // Load a map and render in 2d and 3d
-    $.get("backend.php/map/1", function(data) {
+    $.get("backend.php/map/8", function(data) {
         Game.map = data.map;
         $("h1").html(data.map.name);
         Game.render2dMap(data.map);
         Game.loadMap(data.map);
+
+        console.info(Game.map.start);
     });
 
     // Set keyboard handler
