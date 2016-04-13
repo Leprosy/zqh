@@ -97,6 +97,18 @@ Game.render2dMap = function(map) {
                             .color("#00ff00");
 }
 
+
+Game._addDebug = function(pos) {
+    var mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(Game.size / 10, 20, 20),
+        new THREE.MeshBasicMaterial({
+            color: "#ffffff"
+        })
+    );
+    Game.scene.add(mesh);
+    mesh.position.copy(pos);
+}
+
 /**
  * Initializes 3d components
  */
@@ -106,16 +118,23 @@ Game.init3d = function() {
     Game.scene = new THREE.Scene();
     Game.renderer = new THREE.WebGLRenderer();
     Game.renderer.setSize($container.width(), $container.width() * 0.8);
+    Game.renderer.shadowMapEnabled = true;
+    
     Game.camera = new THREE.PerspectiveCamera(75, 1.2, 1, 150 * Game.size);
 
     // Light
     Game.light = new THREE.PointLight(0xFFFFFF, Game.lightSize, Game.size * 10);
+    //Game.light.castShadow = true;
     Game.scene.add(Game.light);
     Game.lightTween1 = new Tween(Game.light).to({intensity: Game.lightSize + Game.lightVar}, 1200);
     Game.lightTween2 = new Tween(Game.light).to({intensity: Game.lightSize - Game.lightVar}, 1200);
     Game.lightTween1.chain(Game.lightTween2);
     Game.lightTween2.chain(Game.lightTween1);
     Game.lightTween1.start(); //@todo: easing, tween the position
+
+    /* Game.light_sun = new THREE.PointLight(0xFFFFFF, 1, Game.size * 10);
+    Game.light_sun.castShadow = true;
+    Game.scene.add(Game.light_sun); */
 
     // Sky
     Game.sky = new THREE.Mesh(
@@ -125,11 +144,13 @@ Game.init3d = function() {
             side: THREE.DoubleSide
         })
     );
+
     Game.scene.add(Game.sky);
 
     // Finish
     $container.append(Game.renderer.domElement);
 };
+
 
 /**
  * Render a map in 3d canvas
@@ -146,6 +167,24 @@ Game.loadMap = function(map) {
         mesh.position.x = floor.x * Game.size;
         mesh.position.z = floor.y * Game.size;
         mesh.position.y = -Game.size / 2;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        Game.scene.add(mesh);
+    }
+
+    for (i = 0; i < map.roofs.length; ++i) {
+        var roof = map.roofs[i];
+
+        var mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(Game.size, Game.size / 20, Game.size),
+                new THREE.MeshLambertMaterial({
+                    map: new THREE.ImageUtils.loadTexture("img/textures/roof1.png") //@todo: preload
+                }));
+        mesh.position.x = roof.x * Game.size;
+        mesh.position.z = roof.y * Game.size;
+        mesh.position.y = Game.size / 2;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         Game.scene.add(mesh);
     }
 
@@ -159,6 +198,8 @@ Game.loadMap = function(map) {
         mesh.position.x = wall.x * Game.size;
         mesh.position.z = wall.y * Game.size;
         mesh.position.y = 0;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         Game.scene.add(mesh);
     }
 
@@ -184,6 +225,10 @@ Game.loadMap = function(map) {
     Game.camera.position.y = 0;
     Game.player.x = map.start.x;
     Game.player.y = map.start.y;
+
+//DEBUG
+Game.light_sun.position.copy(Game.camera.position)
+Game.light_sun.position.y = 15
 };
 
 /**
@@ -303,7 +348,7 @@ window.onload = function() {
         Game.render2dMap(data.map);
         Game.loadMap(data.map);
 
-        console.info(Game.map.start);
+        console.info(Game.map);
     });
 
     // Set keyboard handler
