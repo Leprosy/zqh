@@ -155,53 +155,27 @@ Game.init3d = function() {
 /**
  * Render a map in 3d canvas
  */
+Game._loadMesh = function(collection, x, y, z, dy, txt) {
+    for (i = 0; i < collection.length; ++i) {
+        var item = collection[i];
+        var mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(x, y, z),
+                new THREE.MeshLambertMaterial({
+                    map: new THREE.ImageUtils.loadTexture("img/textures/" + txt + "1.png") //@todo: preload, change 1 with a value in item
+                }));
+        mesh.position.x = item.x * Game.size;
+        mesh.position.z = item.y * Game.size;
+        mesh.position.y = dy;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        Game.scene.add(mesh);
+    }
+};
 Game.loadMap = function(map) {
     // Render map
-    for (i = 0; i < map.floors.length; ++i) {
-        var floor = map.floors[i];
-        var mesh = new THREE.Mesh(
-                new THREE.BoxGeometry(Game.size, Game.size / 20, Game.size),
-                new THREE.MeshLambertMaterial({
-                    map: new THREE.ImageUtils.loadTexture("img/textures/floor1.png") //@todo: preload
-                }));
-        mesh.position.x = floor.x * Game.size;
-        mesh.position.z = floor.y * Game.size;
-        mesh.position.y = -Game.size / 2;
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        Game.scene.add(mesh);
-    }
-
-    for (i = 0; i < map.roofs.length; ++i) {
-        var roof = map.roofs[i];
-
-        var mesh = new THREE.Mesh(
-                new THREE.BoxGeometry(Game.size, Game.size / 20, Game.size),
-                new THREE.MeshLambertMaterial({
-                    map: new THREE.ImageUtils.loadTexture("img/textures/roof1.png") //@todo: preload
-                }));
-        mesh.position.x = roof.x * Game.size;
-        mesh.position.z = roof.y * Game.size;
-        mesh.position.y = Game.size / 2;
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        Game.scene.add(mesh);
-    }
-
-    for (i = 0; i < map.walls.length; ++i) {
-        var wall = map.walls[i];
-        var mesh = new THREE.Mesh(
-                new THREE.BoxGeometry(Game.size, Game.size, Game.size),
-                new THREE.MeshLambertMaterial({
-                    map: new THREE.ImageUtils.loadTexture("img/textures/wall1.png") //@todo: preload
-                }));
-        mesh.position.x = wall.x * Game.size;
-        mesh.position.z = wall.y * Game.size;
-        mesh.position.y = 0;
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        Game.scene.add(mesh);
-    }
+    Game._loadMesh(map.floors, Game.size, Game.size / 20, Game.size, -Game.size / 2, "floor");
+    Game._loadMesh(map.roofs, Game.size, Game.size / 20, Game.size, Game.size / 2, "roof");
+    Game._loadMesh(map.walls, Game.size, Game.size, Game.size, 0, "wall");
 
     //Render sprites
     for (i = 0; i < map.objects.length; ++i) {
