@@ -227,11 +227,12 @@ class Map {
         }
 
         // Add rooms to map array
-        foreach ($this->rooms as $room) {
-            $addRoof = false;
+        foreach ($this->rooms as $i => $room) {
+            $addRoof = true;
 
-            if (!$this->open || rand(0, 10) < 5) {
-                $addRoof = true;
+            // First room is always open
+            if ($this->open && (rand(0, 10) < 5 || $i == 0)) {
+                $addRoof = false;
             }
 
             for ($x = 0; $x < $room->width; ++$x) {
