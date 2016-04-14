@@ -136,9 +136,9 @@ Game.init3d = function() {
     Game.light_sun.castShadow = true;
     Game.scene.add(Game.light_sun); */
 
-    // Sky
+    // Skydome
     Game.sky = new THREE.Mesh(
-        new THREE.SphereGeometry(50 * Game.size, 20, 20),
+        new THREE.SphereGeometry(50 * Game.size, 20, 20, 0, Math.PI * 2, 0.91, 0.65),
         new THREE.MeshBasicMaterial({
             map: THREE.ImageUtils.loadTexture('img/textures/sky1.png'),
             side: THREE.DoubleSide
@@ -172,12 +172,12 @@ Game._loadMesh = function(collection, x, y, z, dy, txt) {
     }
 };
 Game.loadMap = function(map) {
-    // Render map
+    // Render map meshes
     Game._loadMesh(map.floors, Game.size, Game.size / 20, Game.size, -Game.size / 2, "floor");
     Game._loadMesh(map.roofs, Game.size, Game.size / 20, Game.size, Game.size / 2, "roof");
     Game._loadMesh(map.walls, Game.size, Game.size, Game.size, 0, "wall");
 
-    //Render sprites
+    // Render sprites
     for (i = 0; i < map.objects.length; ++i) {
         var obj = map.objects[i];
 
