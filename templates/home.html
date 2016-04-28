@@ -51,12 +51,23 @@
 * Game stuff
 */
 var Game = {};
-Game.size = 10;
+
+// Map
 Game.map = null;
+
+// Parameters
+Game.size = 10;
 Game.lightSize = 1;
 Game.lightVar = 0.1;
 Game.moveSpeed = 250;
+
+// Texture data
+Game.materials = {};
+Game._materials = 0;
+
+// Flags
 Game.isMoving = false;
+Game.isPlaying = false;
 Game.debug = false;
 
 // @todo: Should refactor these into a class
@@ -72,7 +83,7 @@ Game.render2dMap = function(map) {
     Game.map2dSize = tile;
 
     Crafty.init(map.width * tile, map.height * tile, "map");
-    Crafty.pixelart(true);
+    //Crafty.pixelart(true);
     Crafty.background('#004');
 
     for (i = 0; i < map.floors.length; ++i) {
@@ -112,19 +123,53 @@ Game._addDebug = function(pos) {
 /**
  * Initializes 3d components
  */
+Game.init = function() {
+    console.info("zqh: initializing");
+    Game.initTxt();
+};
+
+Game.initTxt = function() { // TODO: This need heavy refactor, to include multiple textures for each category
+    // Materials
+    var materialList = ["wall", "floor", "sky", "roof"];
+    var loader = new THREE.TextureLoader();
+    Game._materials = materialList.length;
+
+    ["wall", "floor", "sky", "roof"].forEach(function(el, i, arr) {
+        loader.load("img/textures/" + el + "1.png",
+            function (texture) { // onLoad
+                var material = new THREE.MeshLambertMaterial({map: texture});
+                Game.materials[el] = [material];
+
+                // Load finished
+                if (--Game._materials == 0) {
+                    Game.init3d();
+                }
+            },
+
+            function (xhr) { //progress
+                console.log((xhr.loaded / xhr.total * 100) + "% loaded");
+            },
+
+            function (xhr) {
+                console.error("An error happened", xhr);
+            }
+        );
+    });
+};
+
 Game.init3d = function() {
     // Init components
+    console.info("zqh: 3d components");
     var $container = $("#3d");
     Game.scene = new THREE.Scene();
     Game.renderer = new THREE.WebGLRenderer();
     Game.renderer.setSize($container.width(), $container.width() * 0.8);
-    Game.renderer.shadowMapEnabled = true;
-    
+    //Game.renderer.shadowMap.enabled = true;
     Game.camera = new THREE.PerspectiveCamera(75, 1.2, 1, 150 * Game.size);
 
     // Light
+    console.info("zqh: light");
     Game.light = new THREE.PointLight(0xFFFFFF, Game.lightSize, Game.size * 10);
-    //Game.light.castShadow = true;
     Game.scene.add(Game.light);
     Game.lightTween1 = new Tween(Game.light).to({intensity: Game.lightSize + Game.lightVar}, 1200);
     Game.lightTween2 = new Tween(Game.light).to({intensity: Game.lightSize - Game.lightVar}, 1200);
@@ -132,15 +177,12 @@ Game.init3d = function() {
     Game.lightTween2.chain(Game.lightTween1);
     Game.lightTween1.start(); //@todo: easing, tween the position
 
-    /* Game.light_sun = new THREE.PointLight(0xFFFFFF, 1, Game.size * 10);
-    Game.light_sun.castShadow = true;
-    Game.scene.add(Game.light_sun); */
-
     // Skydome
+    console.info("zqh: sky");
     Game.sky = new THREE.Mesh(
         new THREE.SphereGeometry(50 * Game.size, 20, 20, 0, Math.PI * 2, 0.91, 0.65),
         new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture('img/textures/sky1.png'),
+            map: Game.materials.sky[0].map,
             side: THREE.DoubleSide
         })
     );
@@ -149,20 +191,29 @@ Game.init3d = function() {
 
     // Finish
     $container.append(Game.renderer.domElement);
+    console.info("zqh: finished");
 };
+
+//TODO: delete previous map
+Game.loadMap = function(url) { // url = backend.php/map/2
+    // Load a map and render in 2d and 3d
+    $.get(url, function(data) {
+        Game.map = data.map;
+        $("h1").html(data.map.name);
+        Game.render2dMap(data.map);
+        Game.buildMap(data.map);
+        console.info("zqh: map loaded", Game.map);
+    });
+}
 
 
 /**
  * Render a map in 3d canvas
  */
-Game._loadMesh = function(collection, x, y, z, dy, txt) {
+Game._buildMesh = function(collection, x, y, z, dy, txt) {
     for (i = 0; i < collection.length; ++i) {
         var item = collection[i];
-        var mesh = new THREE.Mesh(
-                new THREE.BoxGeometry(x, y, z),
-                new THREE.MeshLambertMaterial({
-                    map: new THREE.ImageUtils.loadTexture("img/textures/" + txt + "1.png") //@todo: preload, change 1 with a value in item
-                }));
+        var mesh = new THREE.Mesh(new THREE.BoxGeometry(x, y, z), Game.materials[txt][0]); //@todo: change 0 index with a value in item
         mesh.position.x = item.x * Game.size;
         mesh.position.z = item.y * Game.size;
         mesh.position.y = dy;
@@ -171,27 +222,13 @@ Game._loadMesh = function(collection, x, y, z, dy, txt) {
         Game.scene.add(mesh);
     }
 };
-Game.loadMap = function(map) {
+Game.buildMap = function(map) {
     // Render map meshes
-    Game._loadMesh(map.floors, Game.size, Game.size / 20, Game.size, -Game.size / 2, "floor");
-    Game._loadMesh(map.roofs, Game.size, Game.size / 20, Game.size, Game.size / 2, "roof");
-    Game._loadMesh(map.walls, Game.size, Game.size, Game.size, 0, "wall");
+    Game._buildMesh(map.floors, Game.size, Game.size / 20, Game.size, -Game.size / 2, "floor");
+    Game._buildMesh(map.roofs, Game.size, Game.size / 20, Game.size, Game.size / 2, "roof");
+    Game._buildMesh(map.walls, Game.size, Game.size, Game.size, 0, "wall");
 
-    // Render sprites
-    for (i = 0; i < map.objects.length; ++i) {
-        var obj = map.objects[i];
-
-        Game.sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-                         map: new THREE.TextureLoader().load("img/sprites/sprite1.png"),
-                         //color: 0xffffff,
-                         fog: false }));
-
-        Game.sprite.scale.multiplyScalar(40);
-        Game.sprite.position.x = obj.x * Game.size;
-        Game.sprite.position.z = obj.y * Game.size;
-        Game.sprite.position.y = 0;
-        Game.scene.add(Game.sprite);
-    }
+    // Render sprites: Pending
 
     // Set player position. The first object is the starting point.
     Game.camera.position.x = map.start.x * Game.size;
@@ -199,10 +236,6 @@ Game.loadMap = function(map) {
     Game.camera.position.y = 0;
     Game.player.x = map.start.x;
     Game.player.y = map.start.y;
-
-//DEBUG
-/* Game.light_sun.position.copy(Game.camera.position)
-Game.light_sun.position.y = 15 */
 };
 
 /**
@@ -212,7 +245,6 @@ Game.render = function() {
     // Light & skydome in position
     Game.light.position.copy(Game.camera.position);
     Game.sky.position.copy(Game.camera.position);
-
     Game.renderer.render(Game.scene, Game.camera);
 };
 
@@ -312,18 +344,7 @@ Game.keyboardHandler = function(e) {
  */
 window.onload = function() {
     //3d init
-    Game.init3d();
-    Game.animate();
-
-    // Load a map and render in 2d and 3d
-    $.get("backend.php/map/8", function(data) {
-        Game.map = data.map;
-        $("h1").html(data.map.name);
-        Game.render2dMap(data.map);
-        Game.loadMap(data.map);
-
-        console.info(Game.map);
-    });
+    Game.init();
 
     // Set keyboard handler
     $(window).keydown(Game.keyboardHandler);
