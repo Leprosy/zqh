@@ -3,6 +3,7 @@
     <head>
         <style>
         .content{width:80%;margin:1em auto;}
+        canvas{width: 100%;height:100%}
         </style>
         <link rel="stylesheet" href="css/pure.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +20,7 @@
                 </div>
 
                 <div class="pure-u-3-5">
-                    <div id="3d"></div>
+                    <canvas id="3d"></canvas>
                 </div>
 
                 <div class="pure-u-1-5">
@@ -37,6 +38,10 @@
                                 <td><button onclick="Game.rotateRight()">></button></td>
                             </tr>
                         </table>
+                        <hr/>
+                        Rooms: <input id="rooms" value="4" size="2" /><button onclick="Game.loadMap('backend.php/map/' + $('#rooms').val())">Load map</button>
+                        <hr />
+                        <button onclick="Game.animate()">Start</button>
                     </div>
                 </div>
             </div>
@@ -44,7 +49,7 @@
 
         <script src="js/jquery.js"></script>
         <script src="js/crafty.js"></script>
-        <script src="js/three.js"></script>
+        <script src="js/babylon.js"></script>
         <script src="js/lib.js"></script>
 <script>
 /**
@@ -57,20 +62,17 @@ Game.map = null;
 
 // Parameters
 Game.size = 10;
-Game.lightSize = 1;
-Game.lightVar = 0.1;
 Game.moveSpeed = 250;
 
 // Texture data
-Game.materials = {};
-Game._materials = 0;
+Game.textures = {};
 
 // Flags
 Game.isMoving = false;
 Game.isPlaying = false;
 Game.debug = false;
 
-// @todo: Should refactor these into a class
+// @TODO: Should refactor these into a class
 Game.player = {};
 Game.player.x = 0;
 Game.player.y = 0;
@@ -83,7 +85,6 @@ Game.render2dMap = function(map) {
     Game.map2dSize = tile;
 
     Crafty.init(map.width * tile, map.height * tile, "map");
-    //Crafty.pixelart(true);
     Crafty.background('#004');
 
     for (i = 0; i < map.floors.length; ++i) {
@@ -109,94 +110,94 @@ Game.render2dMap = function(map) {
 }
 
 
-Game._addDebug = function(pos) {
-    var mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(Game.size / 10, 20, 20),
-        new THREE.MeshBasicMaterial({
-            color: "#ffffff"
-        })
-    );
-    Game.scene.add(mesh);
-    mesh.position.copy(pos);
-}
-
 /**
  * Initializes 3d components
  */
 Game.init = function() {
-    console.info("zqh: initializing");
-    Game.initTxt();
+    console.info("zqh: initializing...");
+    Game.init3d();
+    Game.initAssets();
+    //window.addEventListener('resize', function() { engine.resize(); }); <-- resize event
 };
 
-Game.initTxt = function() { // TODO: This need heavy refactor, to include multiple textures for each category
+/**
+ * Assets loader
+ */
+Game.initAssets = function() { // TODO: This need heavy refactor, to include multiple textures for each category
+    console.info("zqh: loading assets...");
+
     // Materials
     var materialList = ["wall", "floor", "sky", "roof"];
-    var loader = new THREE.TextureLoader();
-    Game._materials = materialList.length;
+    var manager = new BABYLON.AssetsManager(Game.scene);
 
-    ["wall", "floor", "sky", "roof"].forEach(function(el, i, arr) {
-        loader.load("img/textures/" + el + "1.png",
-            function (texture) { // onLoad
-                var material = new THREE.MeshLambertMaterial({map: texture});
-                Game.materials[el] = [material];
+    materialList.forEach(function(el, i, arr) {
+        var task = manager.addTextureTask("", "img/textures/" + el + "1.png");
 
-                // Load finished
-                if (--Game._materials == 0) {
-                    Game.init3d();
-                }
-            },
-
-            function (xhr) { //progress
-                console.log((xhr.loaded / xhr.total * 100) + "% loaded");
-            },
-
-            function (xhr) {
-                console.error("An error happened", xhr);
-            }
-        );
+        task.onSuccess = function(task) {
+            Game.textures[el + "1"] = task.texture;
+        }
     });
+
+    manager.onFinish = function(tasks) {
+        console.info("zqh: loading assets...OK"); // GAME CAN START HERE
+    };
+    manager.onTaskSuccess = function(task) {
+        console.info("zqh: loaded", task.url);
+    }
+    manager.onError = function(a) {
+        console.error("zqh: error loading", a);
+    }
+
+    manager.load();
 };
 
+
+/**
+ * Init 3d core components
+ */
 Game.init3d = function() {
     // Init components
-    console.info("zqh: 3d components");
-    var $container = $("#3d");
-    Game.scene = new THREE.Scene();
-    Game.renderer = new THREE.WebGLRenderer();
-    Game.renderer.setSize($container.width(), $container.width() * 0.8);
-    //Game.renderer.shadowMap.enabled = true;
-    Game.camera = new THREE.PerspectiveCamera(75, 1.2, 1, 150 * Game.size);
+    console.info("zqh: 3d components...");
 
-    // Light
+    Game.canvas = document.getElementById("3d");
+    Game.engine = new BABYLON.Engine(Game.canvas, true);
+    Game.scene = new BABYLON.Scene(Game.engine);
+    Game.camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -Game.size), Game.scene);
+    Game.camera.attachControl(Game.canvas, true);
+    //Game.camera.setTarget(BABYLON.Vector3.Zero());
+
+    // Lights
     console.info("zqh: light");
-    Game.light = new THREE.PointLight(0xFFFFFF, Game.lightSize, Game.size * 10);
-    Game.scene.add(Game.light);
-    Game.lightTween1 = new Tween(Game.light).to({intensity: Game.lightSize + Game.lightVar}, 1200);
-    Game.lightTween2 = new Tween(Game.light).to({intensity: Game.lightSize - Game.lightVar}, 1200);
-    Game.lightTween1.chain(Game.lightTween2);
-    Game.lightTween2.chain(Game.lightTween1);
-    Game.lightTween1.start(); //@todo: easing, tween the position
+    Game.amb_light = new BABYLON.DirectionalLight('light1', new BABYLON.Vector3(0, -1, 0), Game.scene);
+    Game.amb_light.diffuse = new BABYLON.Color3(1, 1, 1);
+    Game.amb_light.specular = new BABYLON.Color3(0, 0, 0);
+    Game.amb_light.intensity = 0.2;
+
+    Game.light = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 0, 0), Game.scene);
+    Game.light.diffuse = new BABYLON.Color3(1, 1, 1);
+    Game.light.specular = new BABYLON.Color3(0.1, 0.1, 0.1);
+    Game.light.intensity = 1.2;
+    Game.light.range = Game.size * 6;
+
+    Game.shadowGen = new BABYLON.ShadowGenerator(1024, Game.amb_light);
 
     // Skydome
     console.info("zqh: sky");
-    Game.sky = new THREE.Mesh(
-        new THREE.SphereGeometry(50 * Game.size, 20, 20, 0, Math.PI * 2, 0.91, 0.65),
-        new THREE.MeshBasicMaterial({
-            map: Game.materials.sky[0].map,
-            side: THREE.DoubleSide
-        })
-    );
-
-    Game.scene.add(Game.sky);
 
     // Finish
-    $container.append(Game.renderer.domElement);
-    console.info("zqh: finished");
+    Game.engine.runRenderLoop(function () {
+        if (!Game.debug) Game.light.position.copyFrom(Game.camera.position);
+        Game.scene.render();
+    });
+
+    console.info("zqh: 3d components...OK");
 };
 
-//TODO: delete previous map
+/**
+ * Loads a map from the backend
+*/
 Game.loadMap = function(url) { // url = backend.php/map/2
-    // Load a map and render in 2d and 3d
+    // TODO: delete previous map
     $.get(url, function(data) {
         Game.map = data.map;
         $("h1").html(data.map.name);
@@ -206,51 +207,75 @@ Game.loadMap = function(url) { // url = backend.php/map/2
     });
 }
 
-
 /**
  * Render a map in 3d canvas
  */
-Game._buildMesh = function(collection, x, y, z, dy, txt) {
-    for (i = 0; i < collection.length; ++i) {
-        var item = collection[i];
-        var mesh = new THREE.Mesh(new THREE.BoxGeometry(x, y, z), Game.materials[txt][0]); //@todo: change 0 index with a value in item
-        mesh.position.x = item.x * Game.size;
-        mesh.position.z = item.y * Game.size;
-        mesh.position.y = dy;
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        Game.scene.add(mesh);
-    }
-};
 Game.buildMap = function(map) {
     // Render map meshes
-    Game._buildMesh(map.floors, Game.size, Game.size / 20, Game.size, -Game.size / 2, "floor");
-    Game._buildMesh(map.roofs, Game.size, Game.size / 20, Game.size, Game.size / 2, "roof");
-    Game._buildMesh(map.walls, Game.size, Game.size, Game.size, 0, "wall");
+    Game._buildMesh(map.floors, Game.size, 0.1, 0, "floor");
+    Game._buildMesh(map.roofs, Game.size, 0.1, Game.size, "roof");
+    Game._buildMesh(map.walls, Game.size, 1, Game.size / 2, "wall");
 
     // Render sprites: Pending
 
     // Set player position. The first object is the starting point.
     Game.camera.position.x = map.start.x * Game.size;
     Game.camera.position.z = map.start.y * Game.size;
-    Game.camera.position.y = 0;
+    Game.camera.position.y = Game.size / 2;
     Game.player.x = map.start.x;
     Game.player.y = map.start.y;
 };
+Game._buildMesh = function(collection, size, width, y, txt) {
+    for (i = 0; i < collection.length; ++i) {
+        var item = collection[i];
+        var mesh = BABYLON.Mesh.CreateBox(txt + item.x + "x" + item.y, size, Game.scene);
+        mesh.position.x = item.x * Game.size;
+        mesh.position.z = item.y * Game.size;
+        mesh.position.y = y;
+        mesh.scaling.y = width;
+
+        mesh.material = new BABYLON.StandardMaterial("", Game.scene);
+        mesh.material.diffuseTexture = Game.textures[txt + "1"];
+
+        //SHADOWS
+        Game.shadowGen.getShadowMap().renderList.push(mesh);
+        mesh.receiveShadows = true;
+
+        console.log(item);
+    }
+};
+Game._mergeMeshes = function(meshes) {
+    var combined = new THREE.Geometry();
+
+    for (var i = 0; i < meshes.length; i++) {
+        meshes[i].updateMatrix();
+        combined.merge(meshes[i].geometry, meshes[i].matrix);
+    }
+
+    return combined;
+}
 
 /**
  * 3d render update
- */
+ 
 Game.render = function() {
     // Light & skydome in position
-    Game.light.position.copy(Game.camera.position);
+    if (Game.follow) {
+        Game.light.position.x = Game.camera.position.x;
+        Game.light.position.z = Game.camera.position.z;
+        Game.sun_light.position.x = Game.camera.position.x;
+        Game.sun_light.position.z = Game.camera.position.z;
+    }
+
     Game.sky.position.copy(Game.camera.position);
+
+    // Render scene
     Game.renderer.render(Game.scene, Game.camera);
 };
 
 /**
  * Begins animation cycle
- */
+ 
 Game.animate = function() {
     requestAnimationFrame(Game.animate);
     Game.render();
@@ -258,7 +283,7 @@ Game.animate = function() {
 
 /**
  * Collision with an object or wall
- */
+ 
 Game.checkCollision = function(x, y) {
     return (Game.map.colmap[x][y] == 1);
 }
@@ -272,7 +297,7 @@ Game._drawArrow = function(origin, dir, length) {
 
 /**
  * Player rotations and translations
- */
+ 
 Game.forward = function() { Game._move(-1); };
 Game.backward = function() { Game._move(1); };
 Game._move = function(d) {
@@ -347,7 +372,7 @@ window.onload = function() {
     Game.init();
 
     // Set keyboard handler
-    $(window).keydown(Game.keyboardHandler);
+    //$(window).keydown(Game.keyboardHandler);
 }
 
 
