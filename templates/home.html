@@ -65,21 +65,22 @@ Game.size = 10;
 Game.moveSpeed = 250;
 
 // Texture data
-Game.textures = {};
+Game.materials = {};
 
 // Flags
 Game.isMoving = false;
 Game.isPlaying = false;
 Game.debug = false;
 
-// @TODO: Should refactor these into a class
+// @TODO: Should refactor these into a class?
 Game.player = {};
 Game.player.x = 0;
 Game.player.y = 0;
 
 
-
-
+/**
+ * Generate the 2D map
+ */
 Game.render2dMap = function(map) {
     var tile = $("#map").width() / map.width;
     Game.map2dSize = tile;
@@ -109,9 +110,8 @@ Game.render2dMap = function(map) {
                             .color("#00ff00");
 }
 
-
 /**
- * Initializes 3d components
+ * Initializes 3D engine
  */
 Game.init = function() {
     console.info("zqh: initializing...");
@@ -119,38 +119,6 @@ Game.init = function() {
     Game.initAssets();
     //window.addEventListener('resize', function() { engine.resize(); }); <-- resize event
 };
-
-/**
- * Assets loader
- */
-Game.initAssets = function() { // TODO: This need heavy refactor, to include multiple textures for each category
-    console.info("zqh: loading assets...");
-
-    // Materials
-    var materialList = ["wall", "floor", "sky", "roof"];
-    var manager = new BABYLON.AssetsManager(Game.scene);
-
-    materialList.forEach(function(el, i, arr) {
-        var task = manager.addTextureTask("", "img/textures/" + el + "1.png");
-
-        task.onSuccess = function(task) {
-            Game.textures[el + "1"] = task.texture;
-        }
-    });
-
-    manager.onFinish = function(tasks) {
-        console.info("zqh: loading assets...OK"); // GAME CAN START HERE
-    };
-    manager.onTaskSuccess = function(task) {
-        console.info("zqh: loaded", task.url);
-    }
-    manager.onError = function(a) {
-        console.error("zqh: error loading", a);
-    }
-
-    manager.load();
-};
-
 
 /**
  * Init 3d core components
@@ -174,7 +142,7 @@ Game.init3d = function() {
     Game.amb_light.intensity = 0.2;
 
     Game.light = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 0, 0), Game.scene);
-    Game.light.diffuse = new BABYLON.Color3(1, 1, 1);
+    Game.light.diffuse = new BABYLON.Color3(1, 1, 0.8);
     Game.light.specular = new BABYLON.Color3(0.1, 0.1, 0.1);
     Game.light.intensity = 1.2;
     Game.light.range = Game.size * 6;
@@ -186,11 +154,44 @@ Game.init3d = function() {
 
     // Finish
     Game.engine.runRenderLoop(function () {
-        if (!Game.debug) Game.light.position.copyFrom(Game.camera.position);
-        Game.scene.render();
+        Game.render();
     });
 
     console.info("zqh: 3d components...OK");
+};
+
+/**
+ * Assets loader
+ */
+Game.initAssets = function() { // TODO: This need heavy refactor, to include multiple textures for each category
+    console.info("zqh: loading assets...");
+
+    // Materials
+    var materialList = ["wall", "floor", "sky", "roof"];
+    var manager = new BABYLON.AssetsManager(Game.scene);
+
+    materialList.forEach(function(el, i, arr) {
+        var task = manager.addTextureTask("", "img/textures/" + el + "1.png");
+
+        task.onSuccess = function(task) {
+            var material = new BABYLON.StandardMaterial("", Game.scene);
+            material.diffuseTexture = task.texture;
+            material.diffuseTexture.wAng = 0.5 * Math.PI;
+            Game.materials[el + "1"] = material;
+        }
+    });
+
+    manager.onFinish = function(tasks) {
+        console.info("zqh: loading assets...OK"); // GAME CAN START AT THIS POINT
+    };
+    manager.onTaskSuccess = function(task) {
+        console.info("zqh: loaded", task.url);
+    }
+    manager.onError = function(a) {
+        console.error("zqh: error loading", a);
+    }
+
+    manager.load();
 };
 
 /**
@@ -208,7 +209,7 @@ Game.loadMap = function(url) { // url = backend.php/map/2
 }
 
 /**
- * Render a map in 3d canvas
+ * Render a map in 3d canvas. TODO: Merge meshes/geometries?
  */
 Game.buildMap = function(map) {
     // Render map meshes
@@ -234,52 +235,30 @@ Game._buildMesh = function(collection, size, width, y, txt) {
         mesh.position.y = y;
         mesh.scaling.y = width;
 
-        mesh.material = new BABYLON.StandardMaterial("", Game.scene);
-        mesh.material.diffuseTexture = Game.textures[txt + "1"];
+        mesh.material = Game.materials[txt + "1"];
 
-        //SHADOWS
         Game.shadowGen.getShadowMap().renderList.push(mesh);
         mesh.receiveShadows = true;
 
         console.log(item);
     }
 };
-Game._mergeMeshes = function(meshes) {
-    var combined = new THREE.Geometry();
-
-    for (var i = 0; i < meshes.length; i++) {
-        meshes[i].updateMatrix();
-        combined.merge(meshes[i].geometry, meshes[i].matrix);
-    }
-
-    return combined;
-}
 
 /**
  * 3d render update
- 
+ */
 Game.render = function() {
     // Light & skydome in position
-    if (Game.follow) {
+    if (!Game.debug) {
         Game.light.position.x = Game.camera.position.x;
         Game.light.position.z = Game.camera.position.z;
-        Game.sun_light.position.x = Game.camera.position.x;
-        Game.sun_light.position.z = Game.camera.position.z;
+        Game.light.position.y = Game.size / 2;
     }
 
-    Game.sky.position.copy(Game.camera.position);
-
     // Render scene
-    Game.renderer.render(Game.scene, Game.camera);
+    Game.scene.render();
 };
 
-/**
- * Begins animation cycle
- 
-Game.animate = function() {
-    requestAnimationFrame(Game.animate);
-    Game.render();
-};
 
 /**
  * Collision with an object or wall
