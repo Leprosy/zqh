@@ -63,6 +63,7 @@ Game.init = function() {
     console.info("zqh: initializing...");
     Game.init3d();
     Game.initAssets();
+
     window.addEventListener('resize', function() {
         Game._rescale();
         engine.resize();
@@ -108,6 +109,14 @@ Game.init3d = function() {
 
     // Skydome
     console.info("zqh: sky");
+    Game.skybox = BABYLON.Mesh.CreateBox("skybox", Game.size * 2, Game.scene);
+    // Game.skybox.material = new BABYLON.StandardMaterial("skyboxmat", Game.scene);
+    /* Game.skybox.material.backFaceCulling = false;
+    Game.skybox.material.disableLighting = true;
+    Game.skybox.material.diffuseColor = new BABYLON.Color3(0, 0, 1);
+    Game.skybox.material.specularColor = new BABYLON.Color3(0, 0, 1); */
+    Game.skybox.infiniteDistance = true;
+    Game.skybox.sideOrientation = BABYLON.Mesh.BACKSIDE;
 
     // Finish
     Game.engine.runRenderLoop(function () {
@@ -174,8 +183,7 @@ Game.buildMap = function(map) {
     Game._buildMesh(map.roofs, Game.size, 0.1, Game.size, "roof");
     Game._buildMesh(map.walls, Game.size, 1, Game.size / 2, "wall");
 
-    // Render sprites: Pending
-    // Testing code
+    // Render sprites: Testing code
     Game.sprm_alien = new BABYLON.SpriteManager("sprm_alien", "img/sprites/sprite1.png", 100, 150, Game.scene); //100 monsters, 150px cell
     Game.sprite = new BABYLON.Sprite("alien", Game.sprm_alien);
 
@@ -185,6 +193,11 @@ Game.buildMap = function(map) {
     Game.sprite.size = 9;
     Game.sprite.playAnimation(0, 3, true, 200) //Animation from keys 0-3, true is inf.loop, 200 ms
     //Game.sprite.cellIndex = 2; //Go to key 2 of animation
+
+    //Skybox?
+    Game.skybox.material = Game.materials.sky1;
+    //Game.skybox.material.reflectionTexture = Game.materials.sky1.diffuseTexture;
+    //Game.skybox.material.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
 
     // Set player position. The first object is the starting point.
     Game.camera.position.x = map.start.x * Game.size;
@@ -206,8 +219,6 @@ Game._buildMesh = function(collection, size, width, y, txt) {
 
         Game.shadowGen.getShadowMap().renderList.push(mesh);
         mesh.receiveShadows = true;
-
-        console.log(item);
     }
 };
 
@@ -232,13 +243,6 @@ Game.render = function() {
  
 Game.checkCollision = function(x, y) {
     return (Game.map.colmap[x][y] == 1);
-}
-
-Game._drawArrow = function(origin, dir, length) {
-    var length = length * Game.size;
-    var hex = 0xffff00;
-    var arrowHelper = new THREE.ArrowHelper(dir, origin, lenght, hex);
-    Game.scene.add(arrowHelper);
 }
 
 /**
