@@ -14,8 +14,8 @@ Game.moveSpeed = 250;
 Game.materials = {};
 
 // Flags
-/* Game.isMoving = false;
-Game.isPlaying = false; */
+Game.isMoving = false;
+Game.isPlaying = false;
 Game.debug = false;
 
 // @TODO: Should refactor these into a class?
