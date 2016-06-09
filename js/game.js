@@ -63,17 +63,28 @@ Game.init = function() {
     console.info("zqh: initializing...");
     Game.init3d();
     Game.initAssets();
-    //window.addEventListener('resize', function() { engine.resize(); }); <-- resize event
+    window.addEventListener('resize', function() {
+        Game._rescale();
+        engine.resize();
+    });
 };
 
 /**
  * Init 3d core components
  */
+Game._rescale = function() {
+    var cparent = $("canvas").parent();
+    $("canvas").width(cparent.width());
+    $("canvas").height(cparent.width() * 0.8);
+}
+
 Game.init3d = function() {
     // Init components
     console.info("zqh: 3d components...");
 
+    // Get canvas, set size
     Game.canvas = document.getElementById("3d");
+    Game._rescale();
     Game.engine = new BABYLON.Engine(Game.canvas, true);
     Game.scene = new BABYLON.Scene(Game.engine);
     Game.camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -Game.size), Game.scene);
