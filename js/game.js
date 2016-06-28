@@ -109,14 +109,6 @@ Game.init3d = function() {
 
     // Skydome
     console.info("zqh: sky");
-    Game.skybox = BABYLON.Mesh.CreateBox("skybox", Game.size * 2, Game.scene);
-    // Game.skybox.material = new BABYLON.StandardMaterial("skyboxmat", Game.scene);
-    /* Game.skybox.material.backFaceCulling = false;
-    Game.skybox.material.disableLighting = true;
-    Game.skybox.material.diffuseColor = new BABYLON.Color3(0, 0, 1);
-    Game.skybox.material.specularColor = new BABYLON.Color3(0, 0, 1); */
-    Game.skybox.infiniteDistance = true;
-    Game.skybox.sideOrientation = BABYLON.Mesh.BACKSIDE;
 
     // Finish
     Game.engine.runRenderLoop(function () {
@@ -195,9 +187,6 @@ Game.buildMap = function(map) {
     //Game.sprite.cellIndex = 2; //Go to key 2 of animation
 
     //Skybox?
-    Game.skybox.material = Game.materials.sky1;
-    //Game.skybox.material.reflectionTexture = Game.materials.sky1.diffuseTexture;
-    //Game.skybox.material.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
 
     // Set player position. The first object is the starting point.
     Game.camera.position.x = map.start.x * Game.size;
@@ -240,16 +229,16 @@ Game.render = function() {
 
 /**
  * Collision with an object or wall
- 
+ */
 Game.checkCollision = function(x, y) {
     return (Game.map.colmap[x][y] == 1);
 }
 
 /**
  * Player rotations and translations
- 
-Game.forward = function() { Game._move(-1); };
-Game.backward = function() { Game._move(1); };
+ */
+Game.forward = function() { Game._move(1); };
+Game.backward = function() { Game._move(-1); };
 Game._move = function(d) {
     if (!Game.isMoving) {
         var x = Game.camera.position.x;
@@ -270,25 +259,46 @@ Game._move = function(d) {
             Game.player.y = newPy;
             Game.map2dPoint.x = newPx * Game.map2dSize;
             Game.map2dPoint.y = newPy * Game.map2dSize;
-            var tw = new Tween(Game.camera.position).to({ x: newx, z: newz }, Game.moveSpeed)
-                                                    .onFinish(function() { Game.isMoving = false })
-                                                    .start();
+
+            //Animation
+            var anix = new BABYLON.Animation("move", "position.x", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+            var aniz = new BABYLON.Animation("move", "position.z", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+            var keyx = [{frame: 0, value: Game.camera.position.x}, {frame: 15, value: newx}];
+            var keyz = [{frame: 0, value: Game.camera.position.z}, {frame: 15, value: newz}];
+            anix.setKeys(keyx);
+            aniz.setKeys(keyz);
+            Game.camera.animations.push(anix);
+            Game.camera.animations.push(aniz);
+            Game.scene.beginAnimation(Game.camera, 0, 30, false, 1, function() {
+                Game.isMoving = false; //EVENTPLZ
+                Game.camera.animations = [];
+            });
         }
     }
 };
 
-Game.rotateRight = function() { Game._rotate(-1); };
-Game.rotateLeft = function() { Game._rotate(1); };
+Game.rotateRight = function() { Game._rotate(1); };
+Game.rotateLeft = function() { Game._rotate(-1); };
 Game._rotate = function(d) {
     if (!Game.isMoving) {
         Game.isMoving = true;
-        var y = Game.camera.rotation.y;
-        var tw = new Tween(Game.camera.rotation).to({ y: y + d * (Math.PI / 2) }, Game.moveSpeed)
-                                                .onFinish(function() { Game.isMoving = false})
-                                                .start();
+        var y = Game.camera.rotation.y + d * (Math.PI / 2);
+
+        //Game.camera.rotation.y = y + d * (Math.PI / 2);
+        //Game.isMoving = false;
+        //Animation
+        var ani = new BABYLON.Animation("rotate", "rotation.y", 60, BABYLON.Animation.ANIMATIONTYPE_FLOAT);
+        var key = [{frame: 0, value: Game.camera.rotation.y}, {frame: 15, value: y}];
+        ani.setKeys(key);
+        Game.camera.animations.push(ani);
+        Game.scene.beginAnimation(Game.camera, 0, 30, false, 1 , function() {
+            Game.isMoving = false; //EVENTPLZ
+            Game.camera.animations = [];
+        });
     }
 }
 
+/*
 Game.keyboardHandler = function(e) {
     switch (e.keyCode) {
         case 37: // left arrow key
