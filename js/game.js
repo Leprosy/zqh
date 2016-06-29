@@ -110,6 +110,17 @@ Game.init3d = function() {
     // Skydome
     console.info("zqh: sky");
 
+    // Post process
+    BABYLON.Effect.ShadersStore.colorifyVertexShader = "precision highp float;attribute vec3 position;attribute vec2 uv;uniform mat4 worldViewProjection;varying vec2 vUV;void main(){gl_Position=worldViewProjection*vec4(position,1.),vUV=uv;}";
+    BABYLON.Effect.ShadersStore.colorifyPixelShader = "precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;uniform vec3 color;void main(){vec4 texel=texture2D(textureSampler,vUV);vec3 luma=vec3(.299,.587,.114);float v=dot(texel.xyz,luma);gl_FragColor=vec4(v*color,texel.w);}";
+    BABYLON.Effect.ShadersStore.julianVertexShader = "precision highp float;attribute vec3 position;attribute vec2 uv;uniform mat4 worldViewProjection;varying vec2 vUV;void main(){gl_Position=worldViewProjection*vec4(position,1.),vUV=uv;}";
+    BABYLON.Effect.ShadersStore.julianPixelShader = "precision highp float;varying vec2 vUV;uniform sampler2D textureSampler;void main(){float pixel_w=12.,pixel_h=12.,rt_w=3000.,rt_h=3000.;vec3 tc=vec3(1.,0.,0.);float dx=pixel_w*(1./rt_w),dy=pixel_h*(1./rt_h);vec2 coord=vec2(dx*floor(vUV.x/dx),dy*floor(vUV.y/dy));tc=texture2D(textureSampler,coord).xyz;gl_FragColor=vec4(tc,1.);}";
+
+    var postProcess0 = new BABYLON.PassPostProcess("Scene copy", 1.0, Game.camera);
+    var julian = new BABYLON.PostProcess("julian", "julian", null, null, 1, Game.camera);
+
+    //Game.camera.attachPostProcess(new BABYLON.PassPostProcess("alias", 1.0, null, null, Game.engine));
+
     // Finish
     Game.engine.runRenderLoop(function () {
         Game.render();
@@ -133,6 +144,7 @@ Game.initAssets = function() { // TODO: This need heavy refactor, to include mul
 
         task.onSuccess = function(task) {
             var material = new BABYLON.StandardMaterial("", Game.scene);
+            task.texture.updateSamplingMode(BABYLON.Texture.NEAREST_SAMPLINGMODE); //PIXEL
             material.diffuseTexture = task.texture;
             material.diffuseTexture.wAng = 0.5 * Math.PI;
             Game.materials[el + "1"] = material;
@@ -176,7 +188,7 @@ Game.buildMap = function(map) {
     Game._buildMesh(map.walls, Game.size, 1, Game.size / 2, "wall");
 
     // Render sprites: Testing code
-    Game.sprm_alien = new BABYLON.SpriteManager("sprm_alien", "img/sprites/sprite1.png", 100, 150, Game.scene); //100 monsters, 150px cell
+    Game.sprm_alien = new BABYLON.SpriteManager("sprm_alien", "img/sprites/sprite1.png", 100, 150, Game.scene, null, BABYLON.Texture.NEAREST_SAMPLINGMODE); //100 monsters, 150px cell
     Game.sprite = new BABYLON.Sprite("alien", Game.sprm_alien);
 
     Game.sprite.position.x = map.start.x * Game.size;
