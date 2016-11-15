@@ -63,7 +63,7 @@ Game.render2dMap = function(map) {
  * Initializes 3D engine
  */
 Game.init = function() {
-    console.info("zqh: initializing...");
+    console.info("zqh: Initializing...");
     Game.init3d();
     Game.initAssets();
 
@@ -84,7 +84,7 @@ Game._rescale = function() {
 
 Game.init3d = function() {
     // Init components
-    console.info("zqh: 3d components...");
+    console.group("zqh: 3d components...");
 
     // Get canvas, set size
     Game.canvas = document.getElementById("3d");
@@ -96,7 +96,7 @@ Game.init3d = function() {
     //Game.camera.setTarget(BABYLON.Vector3.Zero());
 
     // Lights
-    console.info("zqh: light");
+    console.log("zqh: light");
     Game.amb_light = new BABYLON.DirectionalLight('light1', new BABYLON.Vector3(0, -1, 0), Game.scene);
     Game.amb_light.diffuse = new BABYLON.Color3(1, 1, 1);
     Game.amb_light.specular = new BABYLON.Color3(0, 0, 0);
@@ -110,8 +110,8 @@ Game.init3d = function() {
 
     Game.shadowGen = new BABYLON.ShadowGenerator(1024, Game.amb_light);
 
-    // Skydome
-    console.info("zqh: sky");
+    // Skydome(WIP)
+    console.log("zqh: sky");
 
     // Post process
     var px = 8; //Pixel size
@@ -128,13 +128,14 @@ Game.init3d = function() {
     });
 
     console.info("zqh: 3d components...OK");
+    console.groupEnd();
 };
 
 /**
  * Assets loader
  */
 Game.initAssets = function() { // TODO: This need heavy refactor, to include multiple textures for each category
-    console.info("zqh: loading assets...");
+    console.group("zqh: Loading assets...");
 
     // Materials
     var materialList = ["wall", "floor", "sky", "roof"];
@@ -159,13 +160,14 @@ Game.initAssets = function() { // TODO: This need heavy refactor, to include mul
     }
 
     manager.onFinish = function(tasks) {
-        console.info("zqh: loading assets...OK"); // GAME CAN START AT THIS POINT
+        console.info("zqh: Loading assets...OK"); // GAME CAN START AT THIS POINT
+        console.groupEnd();
     };
     manager.onTaskSuccess = function(task) {
-        console.info("zqh: loaded", task.url);
+        console.log("zqh: Loaded", task.url);
     }
     manager.onError = function(a) {
-        console.error("zqh: error loading", a);
+        console.error("zqh: Error loading", a);
     }
 
     manager.load();
@@ -181,7 +183,7 @@ Game.loadMap = function(url) { // url = backend.php/map/2
         $("h1").html(data.map.name);
         Game.render2dMap(data.map);
         Game.buildMap(data.map);
-        console.info("zqh: map loaded", Game.map);
+        console.info("zqh: Map loaded", Game.map);
     });
 }
 
@@ -296,6 +298,9 @@ Game._move = function(d) {
             Game.scene.beginAnimation(Game.camera, 0, 30, false, 1, function() {
                 Game.isMoving = false; //EVENTPLZ
                 Game.camera.animations = [];
+
+                // A turn was spent
+                Game.tick();
             });
         }
     }
@@ -318,6 +323,9 @@ Game._rotate = function(d) {
         Game.scene.beginAnimation(Game.camera, 0, 30, false, 1 , function() {
             Game.isMoving = false; //EVENTPLZ
             Game.camera.animations = [];
+
+            // A turn was spent
+            Game.tick();
         });
     }
 }
@@ -326,8 +334,7 @@ Game._rotate = function(d) {
  * After a turn ends, this method checks for time events(monster spawn, etc)
  */
 Game.tick = function() {
-    
-    console.info("zqh: end of turn")
+    console.info("zqh: End of turn")
 }
 
 /**
