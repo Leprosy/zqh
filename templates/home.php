@@ -1,3 +1,4 @@
+<?php die("this is home.php") ?>
 <!DOCTYPE html>
 <html>
     <head>
@@ -38,7 +39,7 @@
                             </tr>
                         </table>
                         <hr/>
-                        Rooms: <input id="rooms" value="4" size="2" /><button onclick="Game.loadMap('backend.php/map/' + $('#rooms').val())">Load map</button>
+                        Rooms: <input id="rooms" value="4" size="2" /><button onclick="Game.loadMap('index.php/map/' + $('#rooms').val())">Load map</button>
                         <hr />
                         <button onclick="Game.animate()">Start</button>
                     </div>
