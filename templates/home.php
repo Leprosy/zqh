@@ -1,53 +1,71 @@
-<?php die("this is home.php") ?>
 <!DOCTYPE html>
 <html>
     <head>
-        <style>
-        .content{width:80%;margin:1em auto;}
-        </style>
-        <link rel="stylesheet" href="css/pure.css">
+        <link rel="stylesheet" href="css/bootflat.css">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta charset="utf-8">
-        <title>This is zqh á</title>
+        <style>
+        body{background-color:#000}
+        .container{background-color:#333; color:#fff}
+        </style>
+        <title>This is zqh</title>
     </head>
 
     <body>
-        <div class="content" id="game">
-            <h1></h1>
-            <div class="pure-g">
-                <div class="pure-u-1-5">
-                    <div id="side"></div>
-                </div>
+        <div class="container">
+            <h1>Zqh</h1>
 
-                <div class="pure-u-3-5">
-                    <canvas id="3d"></canvas>
-                </div>
+            <div class="row">
+                <div class="col-md-10">
+                    <h4>Main content</h4>
 
-                <div class="pure-u-1-5">
-                    <div id="map"></div>
-                    <div id="commands">
-                        <table>
-                            <tr>
-                                <td></td>
-                                <td><button onclick="Game.forward()">^</button></td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td><button onclick="Game.rotateLeft()">&lt;</button></td>
-                                <td><button onclick="Game.backward()">v</button></td>
-                                <td><button onclick="Game.rotateRight()">></button></td>
-                            </tr>
-                        </table>
-                        <hr/>
-                        Rooms: <input id="rooms" value="4" size="2" /><button onclick="Game.loadMap('index.php/map/' + $('#rooms').val())">Load map</button>
-                        <hr />
-                        <button onclick="Game.animate()">Start</button>
+                    <div class="panel">
+                        <ul id="myTab1" class="nav nav-tabs nav-justified">
+                            <li class="active"><a href="#game" data-toggle="tab">Game</a></li>
+                            <li class=""><a href="#char" data-toggle="tab">Character</a></li>
+                        </ul>
+
+                        <div id="myTabContent" class="tab-content">
+                            <div class="tab-pane fade active in" id="game">
+                                <div class="row">
+                                    <div class="col-md-10">
+                                        <canvas id="3d"></canvas>
+                                    </div>
+
+                                    <div class="col-md-2" id="commands">
+                                        <div id="map"></div>
+                                        <table>
+                                            <tr>
+                                                <td></td>
+                                                <td><button onclick="Game.forward()">^</button></td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td><button onclick="Game.rotateLeft()">&lt;</button></td>
+                                                <td><button onclick="Game.backward()">v</button></td>
+                                                <td><button onclick="Game.rotateRight()">></button></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="char">
+                              <p>This is the player description</p>
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                <div class="col-md-2">
+                    <h4>Side bar</h4>
+                    Rooms: <input id="rooms" value="4" size="2" />
+                    <button onclick="Game.loadMap('index.php/map/' + $('#rooms').val())">Load map</button>
                 </div>
             </div>
         </div>
 
         <script src="js/jquery.js"></script>
+        <script src="js/bootflat.js"></script>
         <script src="js/crafty.js"></script>
         <script src="js/babylon.js"></script>
         <script src="js/game.js"></script>
