@@ -28,12 +28,29 @@
                         <div id="myTabContent" class="tab-content">
                             <div class="tab-pane fade active in" id="game">
                                 <div class="row">
-                                    <div class="col-md-10">
+                                    <div class="col-md-9">
                                         <canvas id="3d"></canvas>
                                     </div>
 
-                                    <div class="col-md-2" id="commands">
+                                    <div class="col-md-3" id="commands">
                                         <div id="map"></div>
+
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                Action1
+                                            </div>
+                                            <div class="col-md-4">
+                                                Action1
+                                            </div>
+                                            <div class="col-md-4">
+                                                Action1
+                                            </div>
+                                            <div class="col-md-4">
+                                                Action1
+                                            </div>
+                                            <div class="col-md-4"></div>
+                                            <div class="col-md-4"></div>
+                                        </div>
                                         <table>
                                             <tr>
                                                 <td></td>
