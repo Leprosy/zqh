@@ -85,7 +85,14 @@
         <script src="js/bootflat.js"></script>
         <script src="js/crafty.js"></script>
         <script src="js/babylon.js"></script>
-        <script src="js/game.js"></script>
+        <script src="js/require.js"></script>
 
+        <script>
+        requirejs.config({baseUrl: 'js/game'});
+        requirejs(["engine"], function(eng) {
+            eng.init();
+            eng.status();
+        });
+        </script>
     </body>
 </html>
